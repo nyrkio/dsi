@@ -15,7 +15,7 @@ import zipfile
 
 import requests
 import structlog
-import yaml
+import ruamel.yaml as yaml
 
 from common.config import ConfigDict
 from common.log import setup_logging

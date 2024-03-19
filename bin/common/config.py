@@ -12,7 +12,7 @@ import re
 import sys
 import six
 
-import yaml
+import ruamel.yaml as yaml
 
 LOG = logging.getLogger(__name__)
 

@@ -338,7 +338,7 @@ def _process_ftdc_file(path_to_ftdc_file, config, variant, constant_values):  # 
                     build_args = {'path_to_ftdc_file': path_to_ftdc_file}
                 # TODO: All of this is legacy code, should use ConfigDict much more directly.
                 # pylint: disable=deprecated-method
-                arguments_needed = inspect.getargspec(chunk_rule).args
+                arguments_needed = inspect.getfullargspec(chunk_rule)[0]
                 # gather any missing arguments
                 (build_args,
                  constant_values) = _fetch_constant_arguments(chunk, arguments_needed, build_args,

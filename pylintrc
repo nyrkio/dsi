@@ -1,11 +1,9 @@
 [MESSAGES CONTROL]
 disable=locally-disabled,
-        locally-enabled,
         fixme,
         no-name-in-module,
         duplicate-code,
         import-error,
-        relative-import,
         too-few-public-methods,
         # Added when upgrading to python3 + pylint 2.4.4. Feel free to remove later
         useless-object-inheritance,
@@ -17,6 +15,29 @@ disable=locally-disabled,
         no-else-raise,
         using-constant-test,
         subprocess-popen-preexec-fn,
+        # Added when upgrading to python 3.11+ pylint 3.1.0
+        consider-using-f-string,
+        consider-using-from-import,
+        unspecified-encoding,
+        consider-using-with,
+        superfluous-parens,
+        unnecessary-list-index-lookup,
+        missing-timeout,
+        use-maxsplit-arg,
+        super-with-arguments,
+        bad-except-order,
+        use-list-literal,
+        useless-option-value,
+        unused-variable,        # FIXME
+        raise-missing-from,
+        reimported,
+        deprecated-class,
+        wrong-import-position,
+        use-implicit-booleaness-not-comparison,
+        broad-exception-raised,
+        use-yield-from,
+        use-a-generator,
+        consider-using-dict-items,
         duplicate-string-formatting-argument
 
 [REPORTS]

@@ -1,11 +1,9 @@
 [MESSAGES CONTROL]
 disable=locally-disabled,
-        locally-enabled,
         fixme,
         duplicate-code,
         no-name-in-module,
         import-error,
-        relative-import,
         # Either need docstring or good test name but not both
         missing-docstring,
 
@@ -25,9 +23,6 @@ disable=locally-disabled,
         # allow calling "priviate" (leading `_`) methods in tests
         protected-access,
 
-        # don't force helper methods on test classes to be functions
-        no-self-use,
-
         # it's useful to be able to just `catch:` for flow-control tests
         bare-except,
 
@@ -43,7 +38,34 @@ disable=locally-disabled,
         subprocess-popen-preexec-fn,
         duplicate-string-formatting-argument,
         superfluous-parens,
-        no-else-break
+        no-else-break,
+        # Added when upgrading to python 3.11+ pylint 3.1.0
+        consider-using-f-string,
+        consider-using-from-import,
+        unspecified-encoding,
+        consider-using-with,
+        superfluous-parens,
+        unnecessary-list-index-lookup,
+        missing-timeout,
+        use-maxsplit-arg,
+        super-with-arguments,
+        bad-except-order,
+        use-list-literal,
+        useless-option-value,
+        unused-variable,        # FIXME
+        raise-missing-from,
+        reimported,
+        deprecated-class,
+        wrong-import-position,
+        use-implicit-booleaness-not-comparison,
+        broad-exception-raised,
+        use-yield-from,
+        use-a-generator,
+        consider-using-dict-items,
+        duplicate-string-formatting-argument,
+        unrecognized-option,
+        redundant-u-string-prefix,
+        unnecessary-dunder-call
 
 [REPORTS]
 reports=no

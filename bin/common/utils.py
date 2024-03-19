@@ -129,6 +129,8 @@ def find_terraform(work_directory="."):
         # Find terraform in path
         try:
             return subprocess.check_output(['which', 'terraform'], encoding='utf-8').strip()
+        except subprocess.SubprocessError:
+            raise TerraformNotFound()
         except subprocess.CalledProcessError:
             raise TerraformNotFound()
         except OSError:

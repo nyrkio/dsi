@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import unittest
 
-import yaml
+import ruamel.yaml as yaml
 from mock import patch
 from testfixtures import LogCapture
 
@@ -409,8 +409,8 @@ class TestBootstrap(unittest.TestCase):
             crit_logs = set(crit.actual())
 
             message_1 = (u'[critical ] See documentation for installing terraform: '
-                         u'http://bit.ly/2ufjQ0R [bootstrap] ')
-            message_2 = u'[critical ] Call to terraform failed.      [bootstrap] '
+                         u'http://bit.ly/2ufjQ0R [bootstrap]')
+            message_2 = u'[critical ] Call to terraform failed.      [bootstrap]'
             crit_expected = {('bootstrap', 'CRITICAL', message_1),
                              ('bootstrap', 'CRITICAL', message_2)}
             self.assertTrue(crit_expected.issubset(crit_logs))
@@ -429,10 +429,10 @@ class TestBootstrap(unittest.TestCase):
             crit_logs = set(crit.actual())
             crit_expected = {(
                 'bootstrap', 'CRITICAL',
-                u'[critical ] See documentation for installing terraform: http://bit.ly/2ufjQ0R [bootstrap] '
+                u'[critical ] See documentation for installing terraform: http://bit.ly/2ufjQ0R [bootstrap]'
             ),
                              ('bootstrap', 'CRITICAL',
-                              u'[critical ] Cannot execute terraform binary file. [bootstrap] ')}
+                              u'[critical ] Cannot execute terraform binary file. [bootstrap]')}
             self.assertTrue(crit_expected.issubset(crit_logs))
 
     @patch('subprocess.check_output')
@@ -449,9 +449,9 @@ class TestBootstrap(unittest.TestCase):
             crit_logs = set(crit.actual())
             crit_expected = {(
                 'bootstrap', 'CRITICAL',
-                u'[critical ] See documentation for installing terraform: http://bit.ly/2ufjQ0R [bootstrap] '
-            ), ('bootstrap', 'CRITICAL',
-                u'[critical ] No terraform binary file found. [bootstrap] ')}
+                u'[critical ] See documentation for installing terraform: http://bit.ly/2ufjQ0R [bootstrap]'
+            ), ('bootstrap', 'CRITICAL', u'[critical ] No terraform binary file found. [bootstrap]')
+                             }
             self.assertTrue(crit_expected.issubset(crit_logs))
 
     @patch('subprocess.check_output')
@@ -492,7 +492,7 @@ class TestBootstrap(unittest.TestCase):
                 bootstrap.load_bootstrap(config, directory)
             crit.check(
                 ('bootstrap', 'CRITICAL',
-                 u'[critical ] Location specified for bootstrap.yml is invalid. [bootstrap] '))
+                 u'[critical ] Location specified for bootstrap.yml is invalid. [bootstrap]'))
 
     def test_load_bootstrap_different_filename(self):
         """

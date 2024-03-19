@@ -4,7 +4,7 @@ import os
 import unittest
 from contextlib import contextmanager
 
-import yaml
+import ruamel.yaml as yaml
 from mock import patch
 
 import common.config as config

@@ -11,9 +11,9 @@
     ssh-agent bash # initialize ssh-agent, assuming you are using bash
     ssh-add ~/.ssh/$(whoami)-dsikey
 
-    for a in $(aws ec2 describe-regions --query 'Regions[].{Name:RegionName}' --output text); do aws ec2 import-key-pair --key-name $(whoami)-dsikey --public-key-material file://~/.ssh/$(whoami)-dsikey.pub --region $a ; done
+    for a in $(aws ec2 describe-regions --query 'Regions[].{Name:RegionName}' --output text); do aws ec2 import-key-pair --key-name $(whoami)-dsikey --public-key-material file://~/.ssh/$(whoami)-dsikey.pub --region $a --cli-binary-format raw-in-base64-out ; done
 
-    git clone git@github.com:10gen/dsi.git; cd dsi; git checkout stable
+    git clone git@github.com:10gen/dsi.git; cd dsi; # git checkout stable
 
     # Activate virtualenv / workon here if you want (python3)
     pip3 install --user -r requirements.txt

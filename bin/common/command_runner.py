@@ -7,7 +7,13 @@ import logging
 import os
 import sys
 
-from collections import MutableMapping
+import sys
+
+if sys.version_info[:2] >= (3, 8):
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
+
 from enum import Enum
 from functools import partial
 import structlog

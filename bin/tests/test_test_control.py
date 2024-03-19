@@ -555,7 +555,7 @@ class RunTestsTestCase(unittest.TestCase):
             'given': {
                 'exception': Exception('cowsay Hello World'),
             },
-            'then': ExitStatus(1, "Exception('cowsay Hello World',)")
+            'then': ExitStatus(1, "Exception('cowsay Hello World')")
         })
 
     def test_error_from_called_process(self):

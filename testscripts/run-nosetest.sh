@@ -12,4 +12,4 @@ do
 done
 
 # use NOSE_NOCAPTURE=1 or --nocapture to view standard out
-PYTHONPATH=analysis:bin nosetests  -v --ignore-files multi_graphs.py --exe $COVERAGE --logging-clear-handlers $@
+PYTHONPATH=analysis:bin pynose  -v --ignore-files multi_graphs.py --exe $COVERAGE --logging-clear-handlers $@

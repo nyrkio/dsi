@@ -126,7 +126,7 @@ class TestTerraformConfiguration(unittest.TestCase):
                               'Terraform_config.py _do_generate_runner could not access ip.42.pl to'
                               ' get public IP. Falling back to gethostname'),
                              ('common.terraform_config', 'INFO',
-                              "HTTPError('404 Client Error: OK for url: http://ip.42.pl/raw',)"))
+                              "HTTPError('404 Client Error: OK for url: http://ip.42.pl/raw')"))
 
     @patch('socket.gethostname')
     @patch('requests.get')
@@ -149,7 +149,7 @@ class TestTerraformConfiguration(unittest.TestCase):
                  'Terraform_config.py _do_generate_runner could not access AWSmeta-data.'
                  ' Falling back to other methods'),
                 ('common.terraform_config', 'INFO', "HTTPError('404 Client Error: OK for url: "
-                 "http://169.254.169.254/latest/meta-data/public-hostname',)"),
+                 "http://169.254.169.254/latest/meta-data/public-hostname')"),
                 ('common.terraform_config', 'INFO',
                  'Terraform_config.py _do_generate_runner could not access ip.42.pl to get'
                  ' public IP. Falling back to gethostname'),

@@ -328,6 +328,9 @@ def run_tests(config):
                 timer['start'] = time.time()
                 # Run the actual test
                 run_test(test, config)
+            except ValueError:
+                LOG.error("ValueError in test %s.", test['id'], exc_info=1)
+                cur_test_status = TestStatus.ERROR
             except subprocess.CalledProcessError:
                 LOG.error("test %s failed.", test['id'], exc_info=1)
                 cur_test_status = TestStatus.FAILED

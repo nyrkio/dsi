@@ -358,21 +358,21 @@ class TestInfrastructureProvisioning(unittest.TestCase):
              'plugin.terraform-provider-aws_v1.6.0_x4: '
              '<Response><Errors><Error><Code>InsufficientInstanceCapacity</Code><Message>Insufficient '
              'capacity.</Message></Error></Errors><RequestID>bd5b4071-755d-440e-8381-aa09bad52d69</RequestID></Response> '
-             '[infrastructure_provisioning] '),
+             '[infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] 2018-03-05T15:45:36.914+0200 [DEBUG] '
              'plugin.terraform-provider-aws_v1.6.0_x4: '
              '<Response><Errors><Error><Code>RequestLimitExceeded</Code><Message>Request '
              'limit '
              'exceeded.</Message></Error></Errors><RequestID>6280e71d-9be4-442c-8ddf-00265efeafe6</RequestID></Response> '
-             '[infrastructure_provisioning] '),
+             '[infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] 2018-03-05T15:48:36.336+0200 [DEBUG] '
              'plugin.terraform-provider-aws_v1.6.0_x4: '
              '<Response><Errors><Error><Code>InvalidRouteTableID.NotFound</Code><Message>The '
              "routeTable ID 'rtb-509f1528' does not "
              'exist</Message></Error></Errors><RequestID>54256eb4-d706-4084-86dc-b7f581006f9f</RequestID></Response> '
-             '[infrastructure_provisioning] '),
+             '[infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] 2018-03-05T15:48:47.258+0200 [DEBUG] '
              'plugin.terraform-provider-aws_v1.6.0_x4: '
@@ -380,19 +380,19 @@ class TestInfrastructureProvisioning(unittest.TestCase):
              'vpc-a9ed8bd0 has some mapped public address(es). Please unmap those public '
              'address(es) before detaching the '
              'gateway.</Message></Error></Errors><RequestID>cd102bc6-d598-4bae-80f5-25e62103f9a4</RequestID></Response> '
-             '[infrastructure_provisioning] '),
+             '[infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] 2018-03-05T15:49:29.084+0200 [DEBUG] '
              'plugin.terraform-provider-aws_v1.6.0_x4: '
              '<Response><Errors><Error><Code>InvalidPlacementGroup.Unknown</Code><Message>The '
              "Placement Group 'shard-8665ea69-9e76-483a-937b-af68d41d54dd' is "
              'unknown.</Message></Error></Errors><RequestID>4264aef8-ae91-40f0-bc16-d914a8dc2cf8</RequestID></Response> '
-             '[infrastructure_provisioning] '),
+             '[infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] For more info, see:            [infrastructure_provisioning] '
              'path={}'.format(FIXTURE_FILES.fixture_file_path('terraform.log.short'))),
             ('infrastructure_provisioning', 'ERROR',
-             '[error    ]                                [infrastructure_provisioning] '),
+             '[error    ]                                [infrastructure_provisioning]'),
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] For more info, see:            [infrastructure_provisioning] '
              'path={}'.format(FIXTURE_FILES.fixture_file_path('terraform.stdout.log'))))

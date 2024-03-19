@@ -3,7 +3,7 @@
 from __future__ import print_function
 import unittest
 import os
-import yaml
+import ruamel.yaml as yaml
 
 from bin.common.config import ConfigDict
 from bin.common import terraform_output_parser as tf_output

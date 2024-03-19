@@ -112,7 +112,8 @@ mongodb_setup:
   # Note: It's also allowed to upload your own binary. You can unset this by setting to the empty
   # string "" in mongodb_setup.yml or overrides.yml.
   # This URL is 4.2.2. We use the sys-perf build instead of official release to include the jstests/ directory that we copy in our compile task.
-  mongodb_binary_archive: https://s3.amazonaws.com/mciuploads/dsi/sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf/a0bbbff6ada159e19298d37946ac8dc4b497eadf/linux/mongodb-enterprise-sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf.tar.gz
+  # mongodb_binary_archive: https://s3.amazonaws.com/mciuploads/dsi/sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf/a0bbbff6ada159e19298d37946ac8dc4b497eadf/linux/mongodb-enterprise-sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf.tar.gz
+  mongodb_binary_archive: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.2.2.tgz
 
   mongod_config_file:  # Note these defaults can be overridden by user, but not unset.
     net:

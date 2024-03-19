@@ -4,7 +4,7 @@ Implementation of FixtureFiles class.
 
 import json
 import os
-import yaml
+import ruamel.yaml as yaml
 
 
 class FixtureFiles(object):
