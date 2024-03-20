@@ -84,12 +84,11 @@ class TestBootstrap(unittest.TestCase):
         """
         args = [
             '--directory', 'test_directory', '--debug', '--bootstrap-file', './test/bootstrap.yml',
-            '--log-file', 'log.txt', '--verbose', '--symlink'
+            '--log-file', 'log.txt', '--verbose'
         ]
         master_config = {}
         master_config['directory'] = 'test_directory'
         master_config['bootstrap_file'] = './test/bootstrap.yml'
-        master_config['symlink'] = True
         test_config = {}
         test_config = bootstrap.parse_command_line(test_config, args)
         self.assertEqual(test_config, master_config)
@@ -100,12 +99,11 @@ class TestBootstrap(unittest.TestCase):
         """
         args = [
             '--directory', 'test_directory', '-d', '-b', './test/bootstrap.yml', '--log-file',
-            'log.txt', '-v', '-l'
+            'log.txt', '-v'
         ]
         master_config = {}
         master_config['directory'] = 'test_directory'
         master_config['bootstrap_file'] = './test/bootstrap.yml'
-        master_config['symlink'] = True
         test_config = {}
         test_config = bootstrap.parse_command_line(test_config, args)
         self.assertEqual(test_config, master_config)
