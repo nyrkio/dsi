@@ -32,7 +32,7 @@ variable "with_hyperthreading"         { default = "false" }
 
 # AWS instance with placement group for mongod
 resource "aws_instance" "seeded_ebs_member" {
-    ami                 = lookup(var.amis, format("%s-%s", var.region, var.image))
+    ami                 = var.image
     instance_type       = var.instance_type
     count               = var.instance_count
     subnet_id           = var.subnet_id
@@ -66,7 +66,7 @@ resource "aws_instance" "seeded_ebs_member" {
     }
 
     root_block_device {
-        volume_size = 16
+        volume_size = 32
     }
 
     ephemeral_block_device {
