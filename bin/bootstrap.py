@@ -82,16 +82,24 @@ def copy_config_files(dsipath, config, directory):
     configs_to_copy = {
         "infrastructure_provisioning": config.get("infrastructure_provisioning", ""),
         "mongodb_setup": config.get("mongodb_setup", ""),
+        "cluster_setup": config.get("cluster_setup", ""),
         "test_control": config.get("test_control", ""),
         "workload_setup": config.get("workload_setup", ""),
         "analysis": config.get("analysis", "")
     }
 
+    if configs_to_copy["cluster_setup"] != "" and configs_to_copy["cluster_setup"] is not None:
+        del configs_to_copy["mongodb_setup"]
+
     for config_module, bootstrap_variable in configs_to_copy.items():
+        product = "."
+        if config_module == "cluster_setup":
+            if bootstrap_variable != "":
+                product = bootstrap_variable.split(".")[0]
         # Example: ./mongodb_setup.yml
         target_file = os.path.join(directory, config_module + ".yml")
         # Example: ../dsi/configurations/mongodb_setup/mongodb_setup.standalone.wiredTiger.yml
-        source_file = os.path.join(dsipath, "configurations", config_module,
+        source_file = os.path.join(dsipath, "configurations", config_module, product,
                                    config_module + "." + bootstrap_variable + ".yml")
 
         _warn_if_overwriting(target_file)

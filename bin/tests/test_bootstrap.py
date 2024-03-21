@@ -116,7 +116,7 @@ class TestBootstrap(unittest.TestCase):
         """
         Testing copy_config_files moves between dummy directories
         """
-        test_config = {'symlink': False}
+        test_config = {}
         test_dsipath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_dsipath')
         test_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_directory')
         os.makedirs(os.path.join(test_dsipath, 'configurations', 'infrastructure_provisioning'))
@@ -147,6 +147,46 @@ class TestBootstrap(unittest.TestCase):
         bootstrap.copy_config_files(test_dsipath, test_config, test_directory)
         master_files = {
             'infrastructure_provisioning.yml', 'mongodb_setup.yml', 'test_control.yml',
+            'workload_setup.yml'
+        }
+        test_files = set(os.listdir(test_directory))
+        self.assertEqual(test_files, master_files)
+
+    def test_copy_cluster_setup(self):
+        """
+        Testing copy_config_files moves with cluster_setup instead of mongodb_setup
+        """
+        test_config = {}
+        test_dsipath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_dsipath')
+        test_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_directory')
+        os.makedirs(os.path.join(test_dsipath, 'configurations', 'infrastructure_provisioning'))
+        os.makedirs(os.path.join(test_dsipath, 'configurations', 'cluster_setup'))
+        os.makedirs(os.path.join(test_dsipath, 'configurations', 'cluster_setup', 'cratedb'))
+        os.makedirs(os.path.join(test_dsipath, 'configurations', 'test_control'))
+        os.makedirs(os.path.join(test_dsipath, 'configurations', 'workload_setup'))
+        os.mkdir(test_directory)
+        open(
+            os.path.join(test_dsipath, 'configurations', 'infrastructure_provisioning',
+                         'infrastructure_provisioning.single.yml'), 'w').close()
+        open(
+            os.path.join(test_dsipath, 'configurations', 'cluster_setup', 'cratedb'
+                         'cluster_setup.cratedb.replica.yml'), 'w').close()
+        open(os.path.join(test_dsipath, 'configurations', 'test_control', 'test_control.core.yml'),
+             'w').close()
+        open(
+            os.path.join(test_dsipath, 'configurations', 'workload_setup',
+                         'workload_setup.core.yml'), 'w').close()
+        open(
+            os.path.join(test_dsipath, 'configurations', 'workload_setup',
+                         'workload_setup.core.yml'), 'w').close()
+        test_config['infrastructure_provisioning'] = 'single'
+        test_config['cluster_setup'] = 'cratedb.replica'
+        test_config['test_control'] = 'core'
+        test_config['workload_setup'] = 'core'
+        test_config['production'] = False
+        bootstrap.copy_config_files(test_dsipath, test_config, test_directory)
+        master_files = {
+            'infrastructure_provisioning.yml', 'cluster_setup.yml', 'test_control.yml',
             'workload_setup.yml'
         }
         test_files = set(os.listdir(test_directory))

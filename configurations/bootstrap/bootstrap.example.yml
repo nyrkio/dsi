@@ -21,6 +21,8 @@
 # OPTIONAL BUT RECOMMENDED (See $DSI_PATH/configurations/defaults.yml for default values):
 infrastructure_provisioning: single
 mongodb_setup: standalone
+# For products other than mongodb, use cluster_setup
+# cluster_setup: cratedb.standalone
 test_control: ycsb.short
 
 
@@ -37,7 +39,7 @@ overrides:
       ssh_key_name: NAME_OF_SSH_KEY  # The Name of the Key, as known in EC2 (USERNAME-dsikey if you're following the doc)
 
       tags:
-        owner: your.username  # Your mongodb email address
+        owner: your.username  # Your email address
         expire-on-delta: 24  # Set expire-on tag this many hours in the future. (Default is 2.)
 
 

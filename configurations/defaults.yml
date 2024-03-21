@@ -266,6 +266,90 @@ mongodb_setup:
           - source: data/dbs/diagnostic.data
             target: ./diagnostic.data
 
+# Cluster setup is a generalization of mongodb_setup. DSI can support any distributed system that:
+# - May or may not be a database, and therefore have a journal and data directory
+# - Consists of nodes, replica sets and shards
+# Can be downloaded and deployed from a tarball
+#
+# The first non-mongodb product to be supported by DSI was CrateDB. (Work sponsored by them!)
+cluster_setup:
+  product_name: default_name
+  work_dir: ${product.name}
+  journal_dir: /media/ephemeral1/journal
+  data_dir: data
+  log_dir: data/logs
+  clean_db_dir: true
+  # Note: It's also allowed to upload your own binary. You can unset this by setting to the empty
+  # string "" in cluster_setup.yml or overrides.yml.
+  tar_file: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.2.2.tgz
+
+  # Default configs, by product name
+  # Note these defaults can be overridden by user, but not unset.
+  cratedb:
+    node_config_file:
+      todo: todo
+
+      authentication:
+        enabled: true
+        username: username
+        password: password
+        url:
+          "True": "${cluster_setup.authentication.username}:${cluster_setup.authentication.password}@"
+          "False": ""
+
+
+  meta:
+    # A single host, as in "host:port". Use the primary or first proxy / entry point
+    hostname: ${cluster_setup.topology.0.private_ip}:5432
+    # The list of hosts that can be used in a mongodb connection string
+    hosts: ${cluster_setup.topology.0.private_ip}:5432
+    # This lets you easily append &replicaSet=foo or other url params
+    # but still keep the base url with authentication etc.
+    # This param in general shouldn't be overwritten.
+    # This should *not* have any query-string parts in it - downstream is expecting to be the first to add on a ?
+    connection_string_base: "https://${cluster_setup.authentication.url.${cluster_setup.authentication.enabled}}${cluster_setup.meta.hosts}/"
+    # Most clients will use this to connect to the cluster
+    connection_string: "${cluster_setup.meta.mongodb_url_base}"
+    is_sharded: false
+    is_replset: false
+    secondary: null
+    # Number of primaries in the cluster. For non-sharded this
+    # should be 1. For sharded will be the number of shards.
+    primaries: 1
+    secondaries: 0  # Secondaries per shard
+
+  post_test:
+    - on_all_servers:
+        retrieve_files:
+          - source: data/logs/
+            target: ./
+
+  post_task:
+    - on_all_servers:
+        exec: |
+          rm -rf ./mdiag
+          mkdir -p ./mdiag
+          # TODO: Periodically check forn new stuff in upstream
+          # wget -q -O-  https://raw.githubusercontent.com/mongodb/support-tools/master/mdiag/mdiag.sh > ./mdiag/mdiag.sh
+          wget -q -O-  https://raw.githubusercontent.com/henrikingo/support-tools/master/mdiag/mdiag.sh > ./mdiag/mdiag.sh
+          # The output is written to "$TMPDIR/mdiag-$(hostname).json".
+          # This json file is machine readable, rendering the
+          # output to a more hunan friendly format is not done here.
+          echo "Collecting config and perf metrics with mdiag."
+          sudo TMPDIR=./mdiag bash ./mdiag/mdiag.sh --inhibit-new-version-check --fast > /dev/null
+    - on_all_servers:
+        retrieve_files:
+          - source: mdiag/
+            target: ./
+
+  upon_error:
+    - on_all_servers:
+        exec: |
+          (df; du  --max-depth 1 ./data) | sed "s/^/$(hostname): /"
+        retrieve_files:
+          - source: data/logs/
+            target: ./
+
 test_control:
   task_name: default_task_name
   timeouts:

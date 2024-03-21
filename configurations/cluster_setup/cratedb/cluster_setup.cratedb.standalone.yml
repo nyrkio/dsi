@@ -1,0 +1,31 @@
+product_name: cratedb
+exec_command: todo
+
+# Shared by all nodes
+directories:
+  journal: /media/ebs2/journal
+
+node_config_file:
+  todo: todo
+
+topology:
+  - cluster_type: standalone
+    id: myid1
+    node:
+        public_ip: ${infrastructure_provisioning.out.node.0.public_ip}
+        private_ip: ${infrastructure_provisioning.out.node.0.private_ip}
+
+# Meta data about this cluster setup
+meta:
+  # The list of hosts that can be used in a driver's connection string
+  hosts: ${cluster_setup.topology.0.private_ip}:27017
+  hostname: ${cluster_setup.topology.0.private_ip}
+  port: 27017
+  is_sharded: false
+  is_replset: false
+  cluster_setup: standalone
+
+# Hosts to run correctness checks on.
+validate:
+  standalone:
+    - ${cluster_setup.topology.0.private_ip}:27017
