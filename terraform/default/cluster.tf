@@ -13,7 +13,8 @@ variable mongod_ebs_instance_type               { default = "c3.8xlarge" }
 variable mongod_seeded_ebs_instance_type        { default = "c3.8xlarge" }
 variable mongos_instance_type                   { default = "c3.8xlarge" }
 variable configsvr_instance_type                { default = "m5.xlarge" }
-variable image                                  { default = "amazon2" }
+variable image                                  { default = "ami-062cdffb722c1401c" }
+variable linux_distro                           { default = "amazon2" }
 variable "ssh_user"                             { default = "ec2-user" }
 
 variable with_hyperthreading                    { default = "false" }

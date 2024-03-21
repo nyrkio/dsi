@@ -26,7 +26,7 @@ infrastructure_provisioning:
     workload_instance_type: c7i.8xlarge
 
     image: ami-062cdffb722c1401c
-    linux-distro: amazon2
+    linux_distro: amazon2
     region: us-west-2
     availability_zone: us-west-2a
 

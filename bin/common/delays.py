@@ -85,7 +85,7 @@ class DelayedHost(object):
         """
         self.host = this_host
         self.config = config
-        self.linux_distro = config["infrastructure_provisioning"]["tfvars"]["linux-distro"]
+        self.linux_distro = config["infrastructure_provisioning"]["tfvars"]["linux_distro"]
         sys_configs = config["infrastructure_provisioning"]["network_delays"]["sys_configs"]
         self.sys_config = sys_configs[self.linux_distro]
         self.interface = config["infrastructure_provisioning"]["network_delays"]["interface"]

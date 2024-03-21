@@ -3,7 +3,8 @@ variable "key_file"             {}
 variable "key_name"             {}
 variable "ssh_user"             { default = "ec2-user" }
 variable "instance_type"        {}
-variable "image"                { default = "amazon2" }
+variable "image"                { default = "ami-062cdffb722c1401c" }
+variable "linux-distro"         { default = "amazon2" }
 variable "instance_count"        {}
 variable "subnet_id"            {}
 variable "owner"                {}

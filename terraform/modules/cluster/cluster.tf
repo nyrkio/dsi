@@ -12,7 +12,8 @@ variable mongod_seeded_ebs_instance_type        { default = "c3.8xlarge" }
 variable mongos_instance_type                   { default = "c3.4xlarge" }
 variable workload_instance_type                 {}
 variable configsvr_instance_type                { default = "m3.2xlarge" }
-variable image                                  { default = "amazon2" }
+variable image                                  { default = "ami-062cdffb722c1401c" }
+variable linux_distro                           { default = "amazon2" }
 
 # define instance count
 variable mongod_instance_count                  { default = 0 }

@@ -21,7 +21,7 @@ class DelaysTestCase(unittest.TestCase):
             'infrastructure_provisioning': {
                 'tfvars': {
                     'image': 'ami-062cdffb722c1401c',
-                    'linux-distro': 'amazon2',
+                    'linux_distro': 'amazon2',
                     'ssh_user': 'test_username',
                     'ssh_key_file': 'test_keyfile'
                 },
