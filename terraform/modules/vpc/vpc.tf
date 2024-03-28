@@ -86,23 +86,12 @@ resource "aws_security_group" "default" {
     description = "DSI config for ${var.topology} cluster"
     vpc_id = aws_vpc.main.id
 
-    # SSH access from everywhere.
     ingress {
-        from_port = 22
-        to_port = 22
-        protocol = "tcp"
+        from_port = 0
+        to_port = 0
+        protocol = -1
         cidr_blocks = ["0.0.0.0/0"]
     }
-
-    # mongodb access from VPC.
-    ingress {
-        from_port = 27016
-        to_port = 27019
-        protocol = "tcp"
-        cidr_blocks = [var.vpc_cidr_block]
-    }
-
-    # allow all egress
     egress {
         from_port = 0
         to_port = 0
