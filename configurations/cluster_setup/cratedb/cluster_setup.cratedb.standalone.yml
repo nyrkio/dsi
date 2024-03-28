@@ -1,31 +1,162 @@
-product_name: cratedb
-exec_command: todo
+tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
 
-# Shared by all nodes
+numactl: false
+
+exec_program:
+  - crate
+  - java
+
+# Recent CrateDB versions no longer support the --daemonize/--fork option at all. So we need to
+# use systemctl even if everything is "installed in ec2-user home directory"
+exec_command: sudo systemctl daemon-reload; sudo systemctl start crate.service
+shutdown_command: sudo systemctl stop crate.service
+client_command: ./crash --hosts ${cluster_setup.meta.hosts} --command
+# It seems I can only make crate listen on external address or localhost, but not both
+# Hence using $(hostname) as a crutch for localhost
+client_command_local: ./crash --format dynamic --hosts $(hostname):4200 --command
+check_node_up: select * from sys.cluster
+
+
+files:
+  lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
+
 directories:
+  extract_dir: crate
+  bin_dir: crate/bin
+  log_dir: logs
+  data_dir: data
   journal: /media/ebs2/journal
 
+
+
+pre_cluster_start:
+  - on_all_hosts:
+      upload_files:
+        - target: daemonize.sh
+          content: |
+            export CRATE_HEAP_SIZE=15829303296
+            nohup ${cluster_setup.directories.bin_dir}/${cluster_setup.exec_program.0} &
+            echo $! > ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.pid
+            echo ${cluster_setup.exec_program.0} PID=$(cat ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.pid)
+        - target: crate.service
+          content: |
+            [Unit]
+            Description=CrateDB Server
+            Documentation=https://crate.io/docs/
+            Wants=network.target
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=ec2-user
+            Group=ec2-user
+            WorkingDirectory=/home/ec2-user/crate
+
+            # default environment variables
+            Environment="CRATE_HEAP_SIZE=15829303296"
+            Environment="CRATE_HOME=/home/ec2-user/crate"
+            Environment="CRATE_PATH_CONF=/home/ec2-user/crate"
+            Environment="CRATE_PATH_LOG=/home/ec2-user/logs"
+            Environment="CRATE_GC_LOG_DIR=/home/ec2-user/logs"
+            Environment="CRATE_HEAP_DUMP_PATH=/var/lib/crate"
+            # load environment
+            # EnvironmentFile=-/home/ec2-user/crate
+
+            ExecStart=/home/ec2-user/crate/bin/crate \
+                -Cpath.conf=/home/ec2-user/crate/config/ \
+                -Cpath.logs=/home/ec2-user/logs/
+
+            StandardOutput=journal
+            StandardError=journal
+
+            # Disable timeout logic and wait until process is stopped
+            TimeoutStopSec=0
+
+            # SIGTERM signal is used to stop the Java process
+            KillSignal=SIGTERM
+
+            # Send the signal only to the JVM rather than its control group
+            KillMode=process
+
+            # Java process is never killed
+            SendSIGKILL=no
+
+            # When a JVM receives a SIGTERM signal it exits with code 143
+            SuccessExitStatus=143 SIGTERM SIGKILL
+
+
+            # Override these settings with a file called
+            # /etc/systemd/system/crate.service.d/crate.conf and specify any changes
+
+            # Specifies the maximum number of bytes of memory that may be locked into RAM
+            LimitMEMLOCK=infinity
+
+            # Specifies the maximum file descriptor number that can be opened by this process
+            LimitNOFILE=65536
+
+            # Specifies the maximum number of processes
+            LimitNPROC=4096
+
+            # Specifies limit of virtual memory that can be used
+            LimitAS=infinity
+
+            [Install]
+            WantedBy=multi-user.target
+
+
+
+  - on_all_hosts:
+      download_files:
+        - source: https://cdn.crate.io/downloads/releases/crash_standalone_0.23.0
+          target: crash
+  - on_all_hosts:
+      exec: |
+          chmod +x crash
+          ./crash --version
+          sudo cp crate.service /lib/systemd/system/crate.service
+
+# Shared by all nodes
+# Note that Cratedb config file is below as text. This is because it uses 0 and 99 as yaml keys,
+# which is forbidden in DSI config files.
 node_config_file:
-  todo: todo
+  remote_path: crate/config/crate.yml
+  content: |
+    path:
+      data: data
+      logs: logs
+    network:
+      host: _site_
+    auth:
+      host_based:
+        config:
+          0:
+            user: crate
+            address: _site_
+            method: trust
+          99:
+            method: password
+
+
+authentication:
+  enabled: false
 
 topology:
   - cluster_type: standalone
     id: myid1
     node:
-        public_ip: ${infrastructure_provisioning.out.node.0.public_ip}
-        private_ip: ${infrastructure_provisioning.out.node.0.private_ip}
+      # TODO: in the following 2 lines mongod is simply a terraform host type. No mongod is actually running there.
+      public_ip: ${infrastructure_provisioning.out.mongod.0.public_ip}
+      private_ip: ${infrastructure_provisioning.out.mongod.0.private_ip}
 
 # Meta data about this cluster setup
 meta:
+  product_name: cratedb
   # The list of hosts that can be used in a driver's connection string
-  hosts: ${cluster_setup.topology.0.private_ip}:27017
-  hostname: ${cluster_setup.topology.0.private_ip}
-  port: 27017
+  hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+  hostname: ${cluster_setup.topology.0.node.private_ip}
+  port: 4200
   is_sharded: false
   is_replset: false
   cluster_setup: standalone
 
-# Hosts to run correctness checks on.
-validate:
-  standalone:
-    - ${cluster_setup.topology.0.private_ip}:27017
+

@@ -185,7 +185,7 @@ ycsb:
   - on_workload_client:
       exec: |
         mkdir -p data/tmp; pushd data/tmp
-        curl --retry 10 http://mirror.cc.columbia.edu/pub/software/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | sudo tar zx -C /usr/local
+        curl --retry 10 https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | sudo tar zx -C /usr/local
         cd /usr/local
         sudo ln -s apache-maven-* maven
         echo 'export M2_HOME=/usr/local/maven' | sudo tee -a /etc/profile.d/maven.sh

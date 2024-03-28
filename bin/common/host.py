@@ -309,6 +309,13 @@ class Host(object):
         else:
             LOG.info('checkout_repos target directory %s exists and is a git repository', target)
 
+    def download(self, source, target, verbose=False):
+        """Download remote source to local target"""
+        curl = ['curl', '--retry', '10', '-fsS', source, '-o', target]
+        if verbose:
+            LOG.debug("Downloading %s on %s", source, self.hostname)
+        return self.exec_command(curl)
+
     def close(self):
         """
         Cleanup any connections

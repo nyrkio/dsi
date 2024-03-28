@@ -7,7 +7,7 @@ bootstrap:
   workload_setup: common
   analysis: common
   storageEngine: wiredTiger
-  test_control: core
+  test_control: ycsb
   production: false
 
 infrastructure_provisioning:
@@ -72,16 +72,18 @@ infrastructure_provisioning:
     set_ulimits:
       exec: |
         # set ulimit nofile for user
-        echo "${infrastructure_provisioning.tfvars.ssh_user}           soft    nofile          65535" | sudo tee -a /etc/security/limits.conf > /dev/null
-        echo "${infrastructure_provisioning.tfvars.ssh_user}           hard    nofile          65535" | sudo tee -a /etc/security/limits.conf > /dev/null
-        echo "${infrastructure_provisioning.tfvars.ssh_user}           soft    nproc           65535" | sudo tee -a /etc/security/limits.conf > /dev/null
-        echo "${infrastructure_provisioning.tfvars.ssh_user}           hard    nproc          65535" | sudo tee -a /etc/security/limits.conf > /dev/null
+        echo "${infrastructure_provisioning.tfvars.ssh_user}           soft    nofile          65536" | sudo tee -a /etc/security/limits.conf > /dev/null
+        echo "${infrastructure_provisioning.tfvars.ssh_user}           hard    nofile          65536" | sudo tee -a /etc/security/limits.conf > /dev/null
+        echo "${infrastructure_provisioning.tfvars.ssh_user}           soft    nproc           65536" | sudo tee -a /etc/security/limits.conf > /dev/null
+        echo "${infrastructure_provisioning.tfvars.ssh_user}           hard    nproc          65536" | sudo tee -a /etc/security/limits.conf > /dev/null
         echo "${infrastructure_provisioning.tfvars.ssh_user}   soft   core   unlimited" | sudo tee -a /etc/security/limits.conf > /dev/null
         echo "${infrastructure_provisioning.tfvars.ssh_user}   hard   core   unlimited" | sudo tee -a /etc/security/limits.conf > /dev/null
         # For control of core dumps and file names:
         # http://man7.org/linux/man-pages/man5/core.5.html
         mkdir -p "$HOME/data/logs"
         echo "$HOME/data/logs/core.%e.%p.%h.%t" |sudo tee -a  /proc/sys/kernel/core_pattern > /dev/null
+        echo vm.max_map_count = 262144 | sudo tee -a /etc/sysctl.d/99-dsi.conf > /dev/null
+        sudo sysctl -w vm.max_map_count=262144
     production_settings:
       exec: |
         # mongodb production recommended configuration
@@ -273,46 +275,89 @@ mongodb_setup:
 #
 # The first non-mongodb product to be supported by DSI was CrateDB. (Work sponsored by them!)
 cluster_setup:
-  product_name: default_name
-  work_dir: ${product.name}
-  journal_dir: /media/ephemeral1/journal
-  data_dir: data
-  log_dir: data/logs
+  # Binaries that we want to test
+  tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
+  # Wheter to use numactl_prefix or not
+  numactl: true
+
+  # One or more program names started by cluster_setup.py
+  # This list is mostly used for pgrep and pkill. The actual start command is in the next row
+  exec_program:
+    - crate
+    - java
+
+  exec_command: echo "Dummy startup command."
+  shutdown_command: echo "Dummy shutdown command"
+  client_command: ./crash --hosts ${cluster_setup.meta.hosts} --command
+  # It seems I can only make crate listen on external address or localhost, but not both
+  # Hence using $(hostname) as a crutch for localhost
+  client_command_local: echo
+  check_node_up: default message, no check was done
+
+  files:
+    lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
+
+  directories:
+    bin_dir: bin
+    journal_dir: /media/ephemeral1/journal
+    data_dir: data
+    log_dir: logs
+    config_dir: config
+
   clean_db_dir: true
-  # Note: It's also allowed to upload your own binary. You can unset this by setting to the empty
-  # string "" in cluster_setup.yml or overrides.yml.
-  tar_file: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.2.2.tgz
+  clean_logs: true
 
   # Default configs, by product name
   # Note these defaults can be overridden by user, but not unset.
   cratedb:
     node_config_file:
-      todo: todo
+      remote_path: crate/config/crate.yml
+      content: |
+        path:
+          data: data
+          logs: logs
+        network:
+          host: _site_
+        auth:
+          host_based:
+            config:
+              0:
+                user: crate
+                address: _site_
+                method: trust
+              99:
+                method: password
 
-      authentication:
-        enabled: true
-        username: username
-        password: password
-        url:
-          "True": "${cluster_setup.authentication.username}:${cluster_setup.authentication.password}@"
-          "False": ""
+    authentication:
+      enabled: false
+      username: username
+      password: password
+      url:
+        "True": "${cluster_setup.cratedb.authentication.username}:${cluster_setup.cratedb.authentication.password}@"
+        "False": ""
 
 
+  topology:
+    - cluster_type: standalone
+      id: myid1
+      node:
+        # TODO: in the following 2 lines mongod is simply a terraform host type. No mongod is actually running there.
+        public_ip: ${infrastructure_provisioning.out.mongod.0.public_ip}
+        private_ip: ${infrastructure_provisioning.out.mongod.0.private_ip}
+
+
+  # Meta data about this cluster setup
   meta:
+    product_name: default_name
+    cluster_setup: standalone
+    # The list of hosts that can be used in a driver's connection string
+    hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
     # A single host, as in "host:port". Use the primary or first proxy / entry point
-    hostname: ${cluster_setup.topology.0.private_ip}:5432
-    # The list of hosts that can be used in a mongodb connection string
-    hosts: ${cluster_setup.topology.0.private_ip}:5432
-    # This lets you easily append &replicaSet=foo or other url params
-    # but still keep the base url with authentication etc.
-    # This param in general shouldn't be overwritten.
-    # This should *not* have any query-string parts in it - downstream is expecting to be the first to add on a ?
-    connection_string_base: "https://${cluster_setup.authentication.url.${cluster_setup.authentication.enabled}}${cluster_setup.meta.hosts}/"
-    # Most clients will use this to connect to the cluster
-    connection_string: "${cluster_setup.meta.mongodb_url_base}"
+    hostname: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+    port: 1234
     is_sharded: false
     is_replset: false
-    secondary: null
+
     # Number of primaries in the cluster. For non-sharded this
     # should be 1. For sharded will be the number of shards.
     primaries: 1
@@ -321,7 +366,7 @@ cluster_setup:
   post_test:
     - on_all_servers:
         retrieve_files:
-          - source: data/logs/
+          - source: logs/
             target: ./
 
   post_task:

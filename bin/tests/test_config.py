@@ -561,8 +561,9 @@ class ConfigDictTestCase(unittest.TestCase):
         actual_keys = self.conf.keys()
         actual_keys.sort()
         expected_keys = [
-            'analysis', 'bootstrap', 'infrastructure_provisioning', 'mongodb_setup', 'runtime',
-            'runtime_secret', 'system_setup', 'test_control', 'workload_setup'
+            'analysis', 'bootstrap', 'cluster_setup', 'infrastructure_provisioning',
+            'mongodb_setup', 'runtime', 'runtime_secret', 'system_setup', 'test_control',
+            'workload_setup'
         ]
 
         self.assertEqual(expected_keys, actual_keys)

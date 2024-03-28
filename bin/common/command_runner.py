@@ -26,6 +26,8 @@ import common.host_utils
 import common.utils
 import common.mongodb_setup_helpers
 
+from common.download_tar import temp_file
+
 from common.thread_runner import run_threads
 
 LOG = logging.getLogger(__name__)
@@ -125,7 +127,7 @@ def _run_host_command_map(target_host, command, prefix, config):
     :raises: UserWarning on error, HostException when there is a cmd or paramiko issue.
     **Note: retrieve_files does not directly raise exceptions on error**.
     """
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     for key, value in command.items():
         if key == "upload_repo_files":
             for paths in value:
@@ -135,8 +137,21 @@ def _run_host_command_map(target_host, command, prefix, config):
                 target_host.upload_file(source, target)
         elif key == "upload_files":
             for paths in value:
-                LOG.debug('Uploading file %s to %s', paths['source'], paths['target'])
-                target_host.upload_file(paths['source'], paths['target'])
+                assert (
+                    ('content' in paths and paths['content'])
+                    or ('source' in paths and paths['source'])
+                ), "upload_files: Either a source file or providing your own content is required."
+                source_path = None
+                if 'source' in paths:
+                    source_path = paths['source']
+                else:
+                    source_path = temp_file()
+                    with open(source_path, "w") as temp_local_file:
+                        temp_local_file.write(paths['content'])
+
+                LOG.debug('Uploading file %s to %s', source_path, paths['target'])
+                target_host.upload_file(source_path, paths['target'])
+
         elif key == "retrieve_files":
             for paths in value:
                 source = paths['source']
@@ -167,6 +182,13 @@ def _run_host_command_map(target_host, command, prefix, config):
                 verbose = paths['verbose'] if 'verbose' in paths else False
                 LOG.debug('Checking out git repository %s to %s', target, source)
                 target_host.checkout_repos(source, target, branch, verbose=verbose)
+        elif key == "download_files":
+            for paths in value:
+                source = paths['source']
+                target = paths['target']
+                verbose = paths['verbose'] if 'verbose' in paths else False
+                LOG.debug('Downloading %s to %s', target, source)
+                target_host.download(source, target, verbose=verbose)
         elif key == "network_delays":
             # Import here to avoid circular imports
             import common.delays as delays

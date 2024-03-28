@@ -42,6 +42,7 @@ class ConfigDict(dict):
         'infrastructure_provisioning',
         'system_setup',
         'workload_setup',
+        'cluster_setup',
         'mongodb_setup',
         'test_control',
         'analysis',
@@ -284,6 +285,7 @@ class ConfigDict(dict):
         defaults_keys = set()
         # Magic key: In a mongodb_setup.topology, if this is a mongod/mongos/configsvr node
         # always return a config_file key.
+        # same for cluster_setup.topology.
         config_file_key = {'config_file'} if self.is_topology_node() else set()
         rs_conf_key = {'rs_conf'} if self.is_topology_replset() else set()
         if isinstance(self.raw, dict):
@@ -502,6 +504,12 @@ class ConfigDict(dict):
            This function does a similar merge for the rs_conf value for replsets."""
         # pylint: disable=too-many-boolean-expressions
 
+        if self.is_topology_node() and key == 'config_file' and self.module == 'cluster_setup':
+            # Note: In the below 2 lines, overrides and ${variables} are already applied
+            common_config = self.root['cluster_setup'].get('node_config_file')
+            node_specific_config = self.raw.get(key, {})
+            return self.get_merged_config_dict_value(common_config, node_specific_config, key), True
+
         if self.is_topology_node() and key == 'config_file':
             # Note: In the below 2 lines, overrides and ${variables} are already applied
             common_config = self.root['mongodb_setup'].get(self.topology_node_type() +
@@ -540,7 +548,7 @@ class ConfigDict(dict):
         # pylint: disable=too-many-boolean-expressions
         # Standalone nodes have a different path
         if len(self.path) >= 3 and \
-                self.path[0] == 'mongodb_setup' and \
+                self.path[0] in ('mongodb_setup', 'cluster_setup') and \
                 self.path[1] == 'topology' and \
                 isinstance(self.path[2], int) and \
                 ((isinstance(self.raw, dict) and
@@ -555,10 +563,10 @@ class ConfigDict(dict):
 
         # replset and sharded_cluster topologies
         if len(self.path) >= 3 and \
-                self.path[0] == 'mongodb_setup' and \
+                self.path[0] in ('mongodb_setup', 'cluster_setup') and \
                 self.path[1] == 'topology' and \
                 isinstance(self.path[2], int) and \
-                self.path[-2] in ('mongod', 'mongos', 'configsvr') and \
+                self.path[-2] in ('mongod', 'mongos', 'configsvr', 'node') and \
                 isinstance(self.path[-1], int):
             return True
 
@@ -569,7 +577,7 @@ class ConfigDict(dict):
 
         Note: This only works when called from get_node_mongo_config(). We don't guard against
         random results if calling it from elsewhere."""
-        if self.path[-2] in ('mongod', 'mongos', 'configsvr'):
+        if self.path[-2] in ('mongod', 'mongos', 'configsvr', 'node'):
             return self.path[-2]
         if is_integer(self.path[-1]):
             return 'mongod'

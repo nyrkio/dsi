@@ -128,21 +128,21 @@ class TestBootstrap(unittest.TestCase):
             os.path.join(test_dsipath, 'configurations', 'infrastructure_provisioning',
                          'infrastructure_provisioning.single.yml'), 'w').close()
         open(
-            os.path.join(test_dsipath, 'configurations', 'mongodb_setup',
-                         'mongodb_setup.replica.yml'), 'w').close()
-        open(os.path.join(test_dsipath, 'configurations', 'test_control', 'test_control.core.yml'),
+            os.path.join(test_dsipath, 'configurations', 'mongodb_setup', 'mongodb_setup.FIII.yml'),
+            'w').close()
+        open(os.path.join(test_dsipath, 'configurations', 'test_control', 'test_control.ycsb.yml'),
              'w').close()
         open(
             os.path.join(test_dsipath, 'configurations', 'workload_setup',
-                         'workload_setup.core.yml'), 'w').close()
+                         'workload_setup.ycsb.yml'), 'w').close()
         open(
             os.path.join(test_dsipath, 'configurations', 'workload_setup',
-                         'workload_setup.core.yml'), 'w').close()
+                         'workload_setup.ycsb.yml'), 'w').close()
         test_config['infrastructure_provisioning'] = 'single'
-        test_config['mongodb_setup'] = 'replica'
+        test_config['mongodb_setup'] = 'FIII'
         test_config['storageEngine'] = 'wiredTiger'
-        test_config['test_control'] = 'core'
-        test_config['workload_setup'] = 'core'
+        test_config['test_control'] = 'ycsb'
+        test_config['workload_setup'] = 'ycsb'
         test_config['production'] = False
         bootstrap.copy_config_files(test_dsipath, test_config, test_directory)
         master_files = {
@@ -169,20 +169,20 @@ class TestBootstrap(unittest.TestCase):
             os.path.join(test_dsipath, 'configurations', 'infrastructure_provisioning',
                          'infrastructure_provisioning.single.yml'), 'w').close()
         open(
-            os.path.join(test_dsipath, 'configurations', 'cluster_setup', 'cratedb'
-                         'cluster_setup.cratedb.replica.yml'), 'w').close()
-        open(os.path.join(test_dsipath, 'configurations', 'test_control', 'test_control.core.yml'),
+            os.path.join(test_dsipath, 'configurations', 'cluster_setup', 'cratedb',
+                         'cluster_setup.cratedb.standalone.yml'), 'w').close()
+        open(os.path.join(test_dsipath, 'configurations', 'test_control', 'test_control.ycsb.yml'),
              'w').close()
         open(
             os.path.join(test_dsipath, 'configurations', 'workload_setup',
-                         'workload_setup.core.yml'), 'w').close()
+                         'workload_setup.ycsb.yml'), 'w').close()
         open(
             os.path.join(test_dsipath, 'configurations', 'workload_setup',
-                         'workload_setup.core.yml'), 'w').close()
+                         'workload_setup.ycsb.yml'), 'w').close()
         test_config['infrastructure_provisioning'] = 'single'
-        test_config['cluster_setup'] = 'cratedb.replica'
-        test_config['test_control'] = 'core'
-        test_config['workload_setup'] = 'core'
+        test_config['cluster_setup'] = 'cratedb.standalone'
+        test_config['test_control'] = 'ycsb'
+        test_config['workload_setup'] = 'ycsb'
         test_config['production'] = False
         bootstrap.copy_config_files(test_dsipath, test_config, test_directory)
         master_files = {
@@ -190,6 +190,8 @@ class TestBootstrap(unittest.TestCase):
             'workload_setup.yml'
         }
         test_files = set(os.listdir(test_directory))
+        print(test_directory)
+        print(test_files)
         self.assertEqual(test_files, master_files)
 
     @patch('os.path.exists')
@@ -672,7 +674,7 @@ class TestBootstrap(unittest.TestCase):
             'terraform_version_check':
                 'Terraform v0.12.16',
             'test_control':
-                'core'
+                'ycsb'
         }
         test_config = {}
         bootstrap.load_bootstrap(test_config, '.')
