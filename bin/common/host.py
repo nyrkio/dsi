@@ -208,8 +208,6 @@ class Host(object):
         argv.extend([connection_string, remote_file_name])
 
         self.create_file(remote_file_name, script)
-        # TODO: Capture this output and redirect into LOG.debug()
-        #self.run(['cat', remote_file_name])
 
         status_code = self.exec_command(argv,
                                         stdout=stdout,
@@ -217,6 +215,46 @@ class Host(object):
                                         max_time_ms=max_time_ms,
                                         quiet=quiet)
         return status_code
+
+    def exec_client_shell(self,
+                          script,
+                          config,
+                          remote_file_name="dsi_client_commands.tmp",
+                          connection_string=None,
+                          stdout=None,
+                          stderr=None,
+                          max_time_ms=None,
+                          quiet=False):
+        """
+        Execute commands in the cluster's client shell.
+
+        Note: This implementation assumes that the client supports execution of commands from a
+        file. This could however be extended to also support inline, stdin, etc.
+
+        :param str commands: The commands to execute in the client shell.
+        :param str remote_file_name: Name and path of file to create with script contents
+        :param str connection_string: A connection_string in the format used by the specific product
+            For example could be a JDBC uri. If empty, connect to the cluster using
+            cluster_setup.meta.connection_string.
+        :param max_time_ms: The time limit in milliseconds for processing this operations, defaults
+        to None (no timeout)
+        :type max_time_ms: int, float, None
+        :param bool quiet: don't log failures if set to True. Defaults to False.
+        """
+        connection_string = (connection_string if connection_string is not None else
+                             config["cluster_setup"]["meta"]["connection_string"])
+
+        self.create_file(remote_file_name, script)
+
+        exec_base = config["cluster_setup"]["client_command_file"]
+        full_exec_str = exec_base.format(connection_string=connection_string,
+                                         command_file=remote_file_name)
+
+        return self.exec_command(full_exec_str,
+                                 max_time_ms=max_time_ms,
+                                 quiet=quiet,
+                                 stderr=stderr,
+                                 stdout=stdout)
 
     def kill_remote_procs(self,
                           name,

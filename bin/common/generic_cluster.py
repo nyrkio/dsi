@@ -190,8 +190,8 @@ class ClusterNode(GenericCluster):
         check_string = self.cluster_setup["check_node_up"]
         i = 0
         dump = False
-        while not self.run_client_shell(check_string.format(self.public_ip),
-                                        dump_on_error=dump) and i < 10:
+        while not self.exec_client_shell(check_string.format(self.public_ip),
+                                         dump_on_error=dump) and i < 10:
             i += 1
             if i == 9:
                 dump = False
@@ -264,7 +264,7 @@ class ClusterNode(GenericCluster):
         """Returns the command to start this node."""
         remote_file_name = self.node_config_file["remote_path"]
         config_contents = self.node_config_file['content']
-        if isinstance(config_contents, str):
+        if not isinstance(config_contents, str):
             config_contents = yaml.dump(config_contents, default_flow_style=False)
         self.host.create_file(remote_file_name, config_contents)
         self.host.run(['cat', remote_file_name])
@@ -307,7 +307,7 @@ class ClusterNode(GenericCluster):
             return False
         return self.wait_until_up()
 
-    def run_client_shell(self, exec_string, max_time_ms=None, dump_on_error=True):
+    def exec_client_shell(self, exec_string, max_time_ms=None, dump_on_error=True):
         """
         Execute `exec_string` in the client's shell on the underlying host
         :param str js_string: the javascript to evaluate.
@@ -316,10 +316,7 @@ class ClusterNode(GenericCluster):
         :param bool dump_on_error: print 100 lines of the cluster node's log on error
         :return: True if the client shell exits successfully
         """
-        full_prefix = self.cluster_setup["client_command_local"]
-        full_exec_str = full_prefix + ' "' + self.cluster_setup["check_node_up"] + '"'
-
-        if self.host.exec_command(full_exec_str, max_time_ms=max_time_ms) != 0:
+        if self.host.exec_client_shell(exec_string, self.config, max_time_ms=max_time_ms) != 0:
             # Some functions call this in a loop, so we may not want to dump the same log repeatedly
             if dump_on_error:
                 self.dump_log()
@@ -360,7 +357,8 @@ class ClusterNode(GenericCluster):
             try:
                 LOG.info("Shutting down node %s, first trying with the provided shutdown_command.",
                          self.private_ip)
-                self.run_client_shell(self.shutdown_command, dump_on_error=False)
+                # TODO: Graceful shutdown via exec_client_shell so that primaries step down first.
+                self.host.run(self.shutdown_command, dump_on_error=False)
             except Exception:  # pylint: disable=broad-except
                 LOG.error(
                     "Error shutting down ClusterNode at %s:%s",
@@ -395,8 +393,7 @@ class ClusterNode(GenericCluster):
 
         return_value = False
         try:
-            return_value = self.shutdown(max_time_ms=max_time_ms)
-            return_value = return_value or self.term(max_time_ms=max_time_ms)
+            return_value = self.term(max_time_ms=max_time_ms)
         finally:
             if not return_value:
                 LOG.warning(
@@ -438,4 +435,4 @@ class ClusterNode(GenericCluster):
 
     def __str__(self):
         """String describing this node"""
-        return '{}: {}'.format(self.exec_program, self.hostport_public())
+        return '{}: {}'.format(self.exec_program[0], self.hostport_public())

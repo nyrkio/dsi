@@ -10,11 +10,14 @@ exec_program:
 # use systemctl even if everything is "installed in ec2-user home directory"
 exec_command: sudo systemctl daemon-reload; sudo systemctl start crate.service
 shutdown_command: sudo systemctl stop crate.service
-client_command: ./crash --hosts ${cluster_setup.meta.hosts} --command
+client_command: ./crash --format dynamic --hosts {connection_string} --command "{command}"
+client_command_file: ./crash --format dynamic --hosts {connection_string} --command "\r {command_file}"
 # It seems I can only make crate listen on external address or localhost, but not both
 # Hence using $(hostname) as a crutch for localhost
-client_command_local: ./crash --format dynamic --hosts $(hostname):4200 --command
-check_node_up: select * from sys.cluster
+client_command_local: ./crash --format dynamic --hosts $(hostname):4200 --command "{}"
+client_command_local_file: ./crash --format dynamic --hosts $(hostname):4200 --command "\r {}"
+check_node_up: \check
+
 
 
 files:
@@ -154,9 +157,13 @@ meta:
   # The list of hosts that can be used in a driver's connection string
   hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
   hostname: ${cluster_setup.topology.0.node.private_ip}
+  connection_string: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
   port: 4200
   is_sharded: false
   is_replset: false
   cluster_setup: standalone
-
+  pgsql:
+    port: 5432
+  jdbc:
+    connection_string: jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}
 

@@ -174,6 +174,10 @@ def _run_host_command_map(target_host, command, prefix, config):
             exit_status = target_host.exec_mongo_command(value['script'],
                                                          connection_string=connection_string)
             common.host_utils.raise_if_not_ok(exit_status, value)
+        elif key == "exec_client_shell":
+            LOG.debug('Executing command %s in the client shell', value)
+            exit_status = target_host.exec_client_shell(value['script'], config)
+            common.host_utils.raise_if_not_ok(exit_status, value)
         elif key == "checkout_repos":
             for paths in value:
                 source = paths['source']
