@@ -202,7 +202,7 @@ ycsb:
       upload_files:
         - source: ${workload_setup.local_repos.ycsb}
           target: ./YCSB
-  - on_workload_client:
+  - on_all_hosts:
       exec: ${workload_setup.install_java}
   - on_workload_client:
       exec: |
@@ -237,7 +237,5 @@ sysbench:
 
 
 install_java: |
-    curl -O --retry 10 -fsS \
-      https://s3-us-west-2.amazonaws.com/dsi-donot-remove/java/jdk-8u162-linux-x64.rpm
-    sudo rpm -i jdk-8u162-linux-x64.rpm
-    sudo /usr/sbin/alternatives --install /usr/bin/java java /usr/java/jdk1.8.0_162/bin/java 20000
+    sudo yum install java-21-amazon-corretto-devel -y
+    java -version
