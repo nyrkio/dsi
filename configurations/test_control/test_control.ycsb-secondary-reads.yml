@@ -5,7 +5,7 @@ run:
     cmd: >
       cd YCSB/ycsb-mongodb;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s
-      -P ../../workloadEvergreen
+      -P ../workloadEvergreen
       -threads ${test_control.thread_levels.load};
     config_filename: workloadEvergreen
     workload_config: |
@@ -14,7 +14,7 @@ run:
       mongodb.readPreference=secondary
       recordcount=5000000
       operationcount=20000000
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=1.0
       updateproportion=0.0
@@ -27,7 +27,7 @@ run:
     cmd: >
       cd YCSB/ycsb-mongodb;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
-      -P ../../workloadEvergreen_100read
+      -P ../workloadEvergreen_100read
       -threads ${test_control.thread_levels.level100-0};
     config_filename: workloadEvergreen_100read
     workload_config: |
@@ -37,7 +37,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=1200
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=1.0
       updateproportion=0.0
@@ -50,7 +50,7 @@ run:
     cmd: >
       cd YCSB/ycsb-mongodb;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
-      -P ../../workloadEvergreen_95read5update
+      -P ../workloadEvergreen_95read5update
       -threads ${test_control.thread_levels.level95-5};
     config_filename: workloadEvergreen_95read5update
     workload_config: |
@@ -60,7 +60,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=1200
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.95
       updateproportion=0.05
@@ -73,7 +73,7 @@ run:
     cmd: >
       cd YCSB/ycsb-mongodb;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
-      -P ../../workloadEvergreen_50read50update
+      -P ../workloadEvergreen_50read50update
       -threads ${test_control.thread_levels.level50-50};
     config_filename: workloadEvergreen_50read50update
     workload_config: |
@@ -83,7 +83,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=1200
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.5
       updateproportion=0.5

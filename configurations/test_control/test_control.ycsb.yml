@@ -3,9 +3,9 @@ run:
   - id: ycsb_load
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s
-      -P ../../workloadEvergreen
+      -P ../workloadEvergreen
       -threads ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.load.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}};
     config_filename: workloadEvergreen
     workload_config: |
@@ -13,7 +13,7 @@ run:
       mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=1.0
       updateproportion=0.0
@@ -24,10 +24,10 @@ run:
   - id: ycsb_100read
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level100r.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
-        -P ../../workloadEvergreen_100read \
+        -P ../workloadEvergreen_100read \
         -threads $level;
       done
     config_filename: workloadEvergreen_100read
@@ -37,7 +37,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=1.0
       updateproportion=0.0
@@ -48,10 +48,10 @@ run:
   - id: ycsb_95read5update
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level95-5.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
-        -P ../../workloadEvergreen_95read5update \
+        -P ../workloadEvergreen_95read5update \
         -threads $level;
       done
     config_filename: workloadEvergreen_95read5update
@@ -61,7 +61,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.95
       updateproportion=0.05
@@ -72,10 +72,10 @@ run:
   - id: ycsb_100update
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level100u.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
-        -P ../../workloadEvergreen_100update \
+        -P ../workloadEvergreen_100update \
         -threads $level;
       done
     config_filename: workloadEvergreen_100update
@@ -85,7 +85,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0
       updateproportion=1.0
@@ -96,10 +96,10 @@ run:
   - id: ycsb_50read50update
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level50-50.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
-        -P ../../workloadEvergreen_50read50update \
+        -P ../workloadEvergreen_50read50update \
         -threads $level;
       done
     config_filename: workloadEvergreen_50read50update
@@ -109,7 +109,7 @@ run:
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.5
       updateproportion=0.5

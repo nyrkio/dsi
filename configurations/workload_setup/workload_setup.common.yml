@@ -193,9 +193,9 @@ ycsb:
         popd
   - on_localhost:
       checkout_repos:
-        - source: git@github.com:mongodb-labs/YCSB.git
+        - source: git@github.com:brianfrankcooper/YCSB.git
           target: ${workload_setup.local_repos.ycsb}
-          branch: 9e7888c5009e44a185b135104dd8456eea1deb1e
+          branch: ce3eb9ce51c84ee9e236998cdd2cefaeb96798a8
   - on_workload_client:
       exec: rm -rf ycsb*
   - on_workload_client:

@@ -2,12 +2,12 @@ task_name: ycsb.longevity
 run:
   - id: ycsb_load
     type: ycsb
-    "cmd": "cd YCSB/ycsb-mongodb; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s -P ../../workloadLongevity -p mongodb.url=${mongodb_setup.meta.mongodb_url} -threads 32"
+    "cmd": "cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s -P ../workloadLongevity -p mongodb.url=${mongodb_setup.meta.mongodb_url} -threads 32"
     config_filename: workloadLongevity
     workload_config: |
       recordcount=50000000
       operationcount=2000000000
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.5
       updateproportion=0.5
@@ -17,7 +17,7 @@ run:
 
   - id: ycsb_50read50update
     type: ycsb
-    "cmd": "cd YCSB/ycsb-mongodb; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s -P ../../workloadLongevity -p mongodb.url=${mongodb_setup.meta.mongodb_url} -threads 64 -p maxexecutiontime=86400"
+    "cmd": "cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s -P ../workloadLongevity -p mongodb.url=${mongodb_setup.meta.mongodb_url} -threads 64 -p maxexecutiontime=86400"
 
 
 

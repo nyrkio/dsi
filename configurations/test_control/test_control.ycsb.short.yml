@@ -2,13 +2,13 @@ task_name: ycsb.short
 run:
   - id: ycsb_load
     type: ycsb
-    cmd: cd YCSB/ycsb-mongodb; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s -P ../../workloadShort -threads 32
+    cmd: cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s -P ../workloadShort -threads 32
     config_filename: workloadShort
     workload_config: |
       mongodb.url=${mongodb_setup.meta.mongodb_url}
       recordcount=250000
       operationcount=3000000
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.5
       updateproportion=0.5
@@ -18,13 +18,13 @@ run:
 
   - id: ycsb_50read50update
     type: ycsb
-    cmd: cd YCSB/ycsb-mongodb; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s -P ../../workloadShort -threads 64
+    cmd: cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s -P ../workloadShort -threads 64
     config_filename: workloadShort
     workload_config: |
       mongodb.url=${mongodb_setup.meta.mongodb_url}
       recordcount=250000
       operationcount=3000000
-      workload=com.yahoo.ycsb.workloads.CoreWorkload
+      workload=site.ycsb.workloads.CoreWorkload
       readallfields=true
       readproportion=0.5
       updateproportion=0.5
