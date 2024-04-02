@@ -405,13 +405,16 @@ class MongoNode(MongoCluster):
             self.auth_enabled = auth_enabled
         for i in range(retries):
             # If there's a problem, don't dump 20x100 lines of log
-            dump_on_error = i < 2
+            dump_on_error =  i < 2
             try:
                 self.run_mongo_shell(
                     'db.getSiblingDB("admin").shutdownServer({})'.format(self.shutdown_options),
                     max_time_ms=max_time_ms,
                     dump_on_error=dump_on_error,
                 )
+            except MongoNetworkError:
+                # This happens because the server shuts down when we told it to...
+                pass
             except Exception:  # pylint: disable=broad-except
                 LOG.error(
                     "Error shutting down MongoNode at %s:%s",

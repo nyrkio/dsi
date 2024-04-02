@@ -67,14 +67,14 @@ def destroy_resources():
     LOG.info('Destroy starting')
     try:
         # Destroy instances first.
-        subprocess.check_call([terraform, 'destroy', var_file, '-force', '-target=module.cluster'])
+        subprocess.check_call([terraform, 'destroy', var_file, '-auto-approve', '-target=module.cluster'])
         # Then destroy the rest, which is the placement group.
         # This is a workaround for the fact that depends_on doesn't work with modules.
         LOG.info('Attempting to destroy remaining resources')
-        subprocess.check_call([terraform, 'destroy', var_file, '-force'])
+        subprocess.check_call([terraform, 'destroy', var_file, '-auto-approve'])
     except CalledProcessError:
         LOG.warning('Failed destroying resources, retrying')
-        subprocess.check_call([terraform, 'destroy', var_file, '-force'])
+        subprocess.check_call([terraform, 'destroy', var_file, '-auto-approve'])
     if previous_directory is not None:
         os.chdir(previous_directory)
 

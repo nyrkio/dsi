@@ -25,7 +25,7 @@ infrastructure_provisioning:
     mongod_instance_type: c7i.8xlarge
     workload_instance_type: c7i.8xlarge
 
-    image: ami-062cdffb722c1401c
+    image: ami-0a70b9d193ae8a799
     linux_distro: amazon2
     region: us-west-2
     availability_zone: us-west-2a
@@ -39,10 +39,14 @@ infrastructure_provisioning:
       owner: perf-terraform-alerts@10gen.com
   numactl_prefix: numactl --interleave=all --cpunodebind=1
   terraform:
-    required_version: Terraform v0.12.16
-    aws_required_version: 2.40.0
-    linux_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_linux_amd64.zip
-    mac_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_darwin_amd64.zip
+    required_version: Terraform v1.7.5
+    aws_required_version: 5.43.0
+    linux_download: https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip
+    mac_download: https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_darwin_amd64.zip
+    # required_version: Terraform v0.12.16
+    # aws_required_version: 2.40.0
+    # linux_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_linux_amd64.zip
+    # mac_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_darwin_amd64.zip
   # System related defaults for network_delays command
   network_delays:
     # Currently only a single device is supported here
@@ -91,7 +95,13 @@ infrastructure_provisioning:
         echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/enabled > /dev/null
         echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/defrag > /dev/null
 
+    install_stuff:
+      exec: |
+        sudo yum update
+        sudo yum install -y iproute-tc numactl nano git
+
   post_provisioning:
+    - on_all_hosts: ${infrastructure_provisioning.post_provisioning_steps.install_stuff}
     - on_all_hosts: ${infrastructure_provisioning.post_provisioning_steps.set_readahead}
     - on_all_hosts: ${infrastructure_provisioning.post_provisioning_steps.set_ulimits}
     - on_all_hosts: ${infrastructure_provisioning.post_provisioning_steps.production_settings}
@@ -116,7 +126,7 @@ mongodb_setup:
   # string "" in mongodb_setup.yml or overrides.yml.
   # This URL is 4.2.2. We use the sys-perf build instead of official release to include the jstests/ directory that we copy in our compile task.
   # mongodb_binary_archive: https://s3.amazonaws.com/mciuploads/dsi/sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf/a0bbbff6ada159e19298d37946ac8dc4b497eadf/linux/mongodb-enterprise-sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf.tar.gz
-  mongodb_binary_archive: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2-4.2.2.tgz
+  mongodb_binary_archive: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2023-7.0.7.tgz
 
   mongod_config_file:  # Note these defaults can be overridden by user, but not unset.
     net:
@@ -144,6 +154,22 @@ mongodb_setup:
 
   # Upload SSL keys (not always used but no harm in uploading them)
   pre_cluster_start:
+    - on_all_hosts:
+        exec: |
+          rm -rf mongosh-*
+    - on_all_hosts:
+        download_files:
+          - source: https://downloads.mongodb.com/compass/mongosh-2.2.2-linux-x64-openssl3.tgz
+            target: mongosh-dsimanagedversion.tgz
+    - on_all_hosts:
+        exec: |
+          tar xf mongosh-dsimanagedversion.tgz
+          mkdir -p bin
+          # Backward compatibility
+          ln -s $(pwd)/mongosh-*/bin/mongosh bin/mongo
+          bin/mongo --version
+
+
     - on_all_hosts:
         upload_repo_files:
           - source: configurations/mongodb_setup/ssl/dsitest.dev.pem
@@ -467,8 +493,8 @@ cluster_setup:
 
         - on_all_hosts:
             download_files:
-              - source: https://cdn.crate.io/downloads/releases/crash_standalone_0.23.0
-                # - source: https://cdn.crate.io/downloads/releases/crash_standalone_latest
+              # - source: https://cdn.crate.io/downloads/releases/crash_standalone_0.23.0
+              - source: https://cdn.crate.io/downloads/releases/crash_standalone_latest
                 target: crash
         - on_all_hosts:
             exec: |

@@ -87,10 +87,11 @@ class TerraformOutputParser(object):  # pylint: disable=too-few-public-methods
 
         # Read file and parse it.
         for line in fread:
-            items = line.rstrip('\n').split(" ")
+            items = line.rstrip('\n').strip('"').strip('"').replace('"', '').split(" ")
             if items[0] in self.INSTANCE_TYPES:
                 instance_type = items[0]
                 LOG.debug("Found instance type %s", instance_type)
+
                 self._ips[instance_type] = [item for item in items[2:] if item != '']
 
     def write_output_files(self):
