@@ -276,65 +276,37 @@ mongodb_setup:
 # The first non-mongodb product to be supported by DSI was CrateDB. (Work sponsored by them!)
 cluster_setup:
   # Binaries that we want to test
-  tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
+  tar_file_url: ${cluster_setup.product.${cluster_setup.meta.product_name}.tar_file_url}
   # Wheter to use numactl_prefix or not
-  numactl: true
+  numactl: ${cluster_setup.product.${cluster_setup.meta.product_name}.numactl}
 
   # One or more program names started by cluster_setup.py
   # This list is mostly used for pgrep and pkill. The actual start command is in the next row
-  exec_program:
-    - crate
-    - java
-
-  exec_command: echo "Dummy startup command."
-  shutdown_command: echo "Dummy shutdown command"
-  client_command: ./crash --hosts ${cluster_setup.meta.hosts} --command
-  # It seems I can only make crate listen on external address or localhost, but not both
-  # Hence using $(hostname) as a crutch for localhost
-  client_command_local: echo
-  check_node_up: default message, no check was done
+  exec_program: ${cluster_setup.product.${cluster_setup.meta.product_name}.exec_program}
+  exec_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.exec_command}
+  shutdown_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.shutdown_command}
+  client_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command}
+  client_command_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command_file}
+  client_command_local: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command_local}
+  client_command_local_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command_local_file}
+  check_node_up: ${cluster_setup.product.${cluster_setup.meta.product_name}.check_node_up}
 
   files:
     lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
-
-  directories:
-    bin_dir: bin
-    journal_dir: /media/ephemeral1/journal
-    data_dir: data
-    log_dir: logs
-    config_dir: config
+  directories: ${cluster_setup.product.${cluster_setup.meta.product_name}.directories}
 
   clean_db_dir: true
   clean_logs: true
 
-  # Default configs, by product name
-  # Note these defaults can be overridden by user, but not unset.
-  cratedb:
-    node_config_file:
-      remote_path: crate/config/crate.yml
-      content: |
-        path:
-          data: data
-          logs: logs
-        network:
-          host: _site_
-        auth:
-          host_based:
-            config:
-              0:
-                user: crate
-                address: _site_
-                method: trust
-              99:
-                method: password
+  node_config_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.node_config_file}
 
-    authentication:
-      enabled: false
-      username: username
-      password: password
-      url:
-        "True": "${cluster_setup.cratedb.authentication.username}:${cluster_setup.cratedb.authentication.password}@"
-        "False": ""
+  authentication:
+    enabled: false
+    username: username
+    password: password
+    url:
+      "True": "${cluster_setup.cratedb.authentication.username}:${cluster_setup.cratedb.authentication.password}@"
+      "False": ""
 
 
   topology:
@@ -348,20 +320,172 @@ cluster_setup:
 
   # Meta data about this cluster setup
   meta:
-    product_name: default_name
+    # Note: This key is rather significant, as a lot of other defaults are product specific.
+    # So you might find the active cluster_setup.shutdown_command is actually defined as
+    # cluster_setup.cratedb.shutdown_command.
+    # For backward compatibility the default value is mongodb, which is kind of funny because
+    # in that case cluster_setup.yml isn't even used, rather mongodb_setup.yml.
+    product_name: mongodb
+
     cluster_setup: standalone
     # The list of hosts that can be used in a driver's connection string
-    hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+    hosts: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hosts}
     # A single host, as in "host:port". Use the primary or first proxy / entry point
-    hostname: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
-    port: 1234
+    hostname: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hostname}
+    connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
+    port: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.port}
+    pgsql: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.pgsql}
+    jdbc: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.jdbc}
+
+
     is_sharded: false
     is_replset: false
-
     # Number of primaries in the cluster. For non-sharded this
     # should be 1. For sharded will be the number of shards.
     primaries: 1
     secondaries: 0  # Secondaries per shard
+
+
+
+  pre_cluster_start: ${cluster_setup.product.${cluster_setup.meta.product_name}.pre_cluster_start}
+  post_cluster_start: ${cluster_setup.product.${cluster_setup.meta.product_name}.post_cluster_start}
+
+
+  # Default configs, by product name
+  # Note these defaults can be overridden by user, but not unset.
+  product:
+    mongodb:
+      meta:
+        connection_string: ${mongodb_setup.meta.mongodb_shell_url}
+
+
+    cratedb:
+      tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
+
+      numactl: false
+
+      exec_program:
+        - crate
+        - java
+
+      # Recent CrateDB versions no longer support the --daemonize/--fork option at all. So we need to
+      # use systemctl even if everything is "installed in ec2-user home directory"
+      exec_command: sudo systemctl daemon-reload; sudo systemctl start crate.service
+      shutdown_command: sudo systemctl stop crate.service
+      client_command: ./crash --format dynamic --hosts {connection_string} --command "{command}"
+      client_command_file: ./crash --format dynamic --hosts {connection_string} --command "\r {command_file}"
+      # It seems I can only make crate listen on external address or localhost, but not both
+      # Hence using $(hostname) as a crutch for localhost
+      client_command_local: ./crash --format dynamic --hosts $(hostname):4200 --command "{}"
+      client_command_local_file: ./crash --format dynamic --hosts $(hostname):4200 --command "\r {}"
+      check_node_up: SELECT attributes, cluster_state_version, connections,version FROM sys.nodes;
+      files:
+        lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
+      directories:
+        extract_dir: crate
+        bin_dir: crate/bin
+        log_dir: logs
+        data_dir: data
+        config_dir: crate/config
+        journal: /media/ebs2/journal
+
+      node_config_file:
+        remote_path: crate/config/crate.yml
+        content: |
+          path:
+            data: data
+            logs: logs
+          network:
+            host: _site_
+          auth:
+            host_based:
+              config:
+                0:
+                  user: crate
+                  address: _site_
+                  method: trust
+                99:
+                  method: password
+
+
+      meta:
+        hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+        hostname: ${cluster_setup.topology.0.node.private_ip}
+        connection_string: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+        port: 4200
+        is_sharded: false
+        is_replset: false
+        cluster_setup: standalone
+        pgsql:
+          port: 5432
+        jdbc:
+          connection_string: jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}
+
+      pre_cluster_start:
+        - on_all_hosts:
+            upload_files:
+              - target: crate.service
+                content: |
+                  [Unit]
+                  Description=CrateDB Server
+                  Documentation=https://crate.io/docs/
+                  Wants=network.target
+                  After=network.target
+
+                  [Service]
+                  Type=simple
+                  User=ec2-user
+                  Group=ec2-user
+                  WorkingDirectory=/home/ec2-user/crate
+                  Environment="CRATE_HEAP_SIZE=15829303296"
+                  Environment="CRATE_HOME=/home/ec2-user/crate"
+                  Environment="CRATE_PATH_CONF=/home/ec2-user/crate"
+                  Environment="CRATE_PATH_LOG=/home/ec2-user/logs"
+                  Environment="CRATE_GC_LOG_DIR=/home/ec2-user/logs"
+                  Environment="CRATE_HEAP_DUMP_PATH=/var/lib/crate"
+                  ExecStart=/home/ec2-user/crate/bin/crate \
+                      -Cpath.conf=/home/ec2-user/crate/config/ \
+                      -Cpath.logs=/home/ec2-user/logs/
+                  StandardOutput=journal
+                  StandardError=journal
+                  TimeoutStopSec=300
+                  # SIGTERM signal is used to stop the Java process
+                  KillSignal=SIGTERM
+                  # Send the signal only to the JVM rather than its control group
+                  KillMode=process
+                  # Java process is never killed
+                  SendSIGKILL=no
+                  SuccessExitStatus=143 SIGTERM SIGKILL
+                  LimitMEMLOCK=infinity
+                  LimitNOFILE=65536
+                  LimitNPROC=4096
+                  LimitAS=infinity
+                  [Install]
+                  WantedBy=multi-user.target
+
+
+
+        - on_all_hosts:
+            download_files:
+              - source: https://cdn.crate.io/downloads/releases/crash_standalone_0.23.0
+                # - source: https://cdn.crate.io/downloads/releases/crash_standalone_latest
+                target: crash
+        - on_all_hosts:
+            exec: |
+                sudo cp crate.service /lib/systemd/system/crate.service
+                chmod +x crash
+                ./crash --version
+
+      post_cluster_start:
+        - on_workload_client:
+            exec_client_shell:
+              connection_string: ${cluster_setup.meta.connection_string}/test
+              script: |
+                  CREATE USER username WITH (password='password');
+                  GRANT ALL PRIVILEGES to username;
+
+
+
 
   post_test:
     - on_all_servers:
@@ -424,6 +548,33 @@ test_control:
   reports_dir_basename: reports
   perf_json:
     path: perf.json
+
+  product:
+    mongodb:
+      ycsb:
+        binding_name: mongodb
+        create_table_script: ${test_control.ycsb_sharding_script}
+        dbproperties: |
+            mongodb.url=${mongodb_setup.meta.mongodb_url}
+
+    cratedb:
+      ycsb:
+        binding_name: jdbc
+        create_table_script: |
+            DROP TABLE IF EXISTS ycsb.usertable;
+            CREATE TABLE ycsb.usertable (
+                  YCSB_KEY TEXT PRIMARY KEY,
+                  FIELD0 TEXT, FIELD1 TEXT,
+                  FIELD2 TEXT, FIELD3 TEXT,
+                  FIELD4 TEXT, FIELD5 TEXT,
+                  FIELD6 TEXT, FIELD7 TEXT,
+                  FIELD8 TEXT, FIELD9 TEXT
+              );
+        dbproperties: |
+              db.driver=org.postgresql.Driver
+              db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
+              db.user=username
+              db.passwd=password
 
   common_fio_config: |
     [global]

@@ -3,7 +3,7 @@ run:
   - id: ycsb_load
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s
       -P ../workloadEvergreen
       -threads ${test_control.thread_levels.load};
@@ -25,7 +25,7 @@ run:
   - id: ycsb_100read_secondary_reads
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
       -P ../workloadEvergreen_100read
       -threads ${test_control.thread_levels.level100-0};
@@ -48,7 +48,7 @@ run:
   - id: ycsb_95read5update_secondary_reads
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
       -P ../workloadEvergreen_95read5update
       -threads ${test_control.thread_levels.level95-5};
@@ -71,7 +71,7 @@ run:
   - id: ycsb_50read50update_secondary_reads
     type: ycsb
     cmd: >
-      cd YCSB/ycsb-mongodb;
+      cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s
       -P ../workloadEvergreen_50read50update
       -threads ${test_control.thread_levels.level50-50};

@@ -254,7 +254,7 @@ class ClusterNode(GenericCluster):
             if setup_args['journal_dir']:
                 commands.append(['mkdir', '-p', setup_args['journal_dir']])
 
-        commands.append(['rm', '-rf', setup_args['config_dir']])
+        #commands.append(['rm', '-rf', setup_args['config_dir']])
         commands.append(['mkdir', '-p', setup_args['config_dir']])
 
         return commands

@@ -2,10 +2,9 @@ task_name: ycsb.short
 run:
   - id: ycsb_load
     type: ycsb
-    cmd: cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s -P ../workloadShort -threads 32
+    cmd: cd YCSB; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh load ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s -P ../workloadShort -P ../db.properties -threads 32
     config_filename: workloadShort
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
       recordcount=250000
       operationcount=3000000
       workload=site.ycsb.workloads.CoreWorkload
@@ -18,10 +17,9 @@ run:
 
   - id: ycsb_50read50update
     type: ycsb
-    cmd: cd YCSB/; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s -P ../workloadShort -threads 64
+    cmd: cd YCSB; ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s -P ../workloadShort -P ../db.properties -threads 64
     config_filename: workloadShort
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
       recordcount=250000
       operationcount=3000000
       workload=site.ycsb.workloads.CoreWorkload
@@ -35,12 +33,22 @@ run:
 
 pre_task:
   - on_workload_client:
-      exec_mongo_shell:
-        connection_string: ${mongodb_setup.meta.mongodb_shell_url}
-        # Shard the YCSB cluster if sharding is enabled
-        script: ${test_control.ycsb_sharding_script}
+      upload_files:
+        - target: db.properties
+          content: |
+              db.driver=org.postgresql.Driver
+              db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
+              db.user=username
+              db.passwd=password
+
+
+  - on_workload_client:
+      exec_client_shell:
+        connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
+        script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
 
 between_tests:
-  - restart_mongodb:
-      clean_logs: true
-      clean_db_dir: false
+  - on_workload_client:
+      exec: |
+         echo "sleep instead of restart"
+         sleep 60

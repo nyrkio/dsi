@@ -207,7 +207,19 @@ ycsb:
   - on_workload_client:
       exec: |
         export JAVA_HOME="/usr/java/jdk1.8.0_162/jre"
-        source /etc/profile.d/maven.sh && cd ~/YCSB/ycsb-mongodb && mvn -Dmongo.version=3.8.1 --quiet clean package
+        # source /etc/profile.d/maven.sh && cd ~/YCSB/ && mvn  -pl site.ycsb:mongodb-binding -am --quiet clean package
+        # source /etc/profile.d/maven.sh && cd ~/YCSB/ && mvn  -pl site.ycsb:jdbc-binding -am --quiet package
+        curl -O --location https://github.com/brianfrankcooper/YCSB/releases/download/0.17.0/ycsb-0.17.0.tar.gz
+        tar xzf ycsb-0.17.0.tar.gz
+        rm -rf YCSB
+        mv ycsb-0.17.0 YCSB
+
+  - on_workload_client:
+      exec: |
+        curl -O --location https://jdbc.postgresql.org/download/postgresql-42.7.3.jar
+        mkdir -p YCSB/jdbc-binding/lib
+        mv postgresql-42.7.3.jar YCSB/jdbc-binding/lib
+
 
 sysbench:
   - on_localhost:
