@@ -668,11 +668,11 @@ class TestBootstrap(unittest.TestCase):
             'storageEngine':
                 'wiredTiger',
             'terraform_linux_download':
-                'https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_linux_amd64.zip',
+                'https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip',
             'terraform_mac_download':
-                'https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_darwin_amd64.zip',
+                'https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_darwin_amd64.zip',
             'terraform_version_check':
-                'Terraform v0.12.16',
+                'Terraform v1.7.5',
             'test_control':
                 'ycsb'
         }

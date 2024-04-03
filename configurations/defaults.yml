@@ -232,6 +232,7 @@ mongodb_setup:
     mongodb_shell_url: "mongodb://${mongodb_setup.authentication.url.${mongodb_setup.authentication.enabled}}${mongodb_setup.meta.hostname}:27017/admin?ssl=false"
     # Used in mongoshell workloads (https://github.com/10gen/workloads/blob/23b1c6dd3a8c087b6a2c949147a8aeaba1d1d271/run_workloads.py#L289-L296)
     shell_ssl_options: []
+    connection_string: ${mongodb_setup.meta.mongodb_shell_url}
     is_sharded: false
     is_replset: false
     is_fle: false
@@ -246,6 +247,8 @@ mongodb_setup:
     # should be 1. For sharded will be the number of shards.
     primaries: 1
     secondaries: 0  # Secondaries per shard
+    jdbc:
+      connection_string: jdbc:mysql://${mongodb_setup.meta.hostname}:27017
 
   post_test:
     - on_all_servers:
@@ -331,7 +334,7 @@ cluster_setup:
     username: username
     password: password
     url:
-      "True": "${cluster_setup.cratedb.authentication.username}:${cluster_setup.cratedb.authentication.password}@"
+      "True": "${cluster_setup.authentication.username}:${cluster_setup.authentication.password}@"
       "False": ""
 
 
@@ -360,7 +363,8 @@ cluster_setup:
     hostname: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hostname}
     connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
     port: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.port}
-    pgsql: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.pgsql}
+    pgsql:
+      port: 5432
     jdbc: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.jdbc}
 
 
@@ -381,9 +385,33 @@ cluster_setup:
   # Note these defaults can be overridden by user, but not unset.
   product:
     mongodb:
-      meta:
-        connection_string: ${mongodb_setup.meta.mongodb_shell_url}
-
+      meta: ${mongodb_setup.meta}
+      numactl: false
+      tar_file_url: not used
+      exec_program: not used
+      exec_command: not used
+      shutdown_command: not used
+      client_command: not used
+      client_command_file: not used
+      client_command_local: not used
+      client_command_local_file: not used
+      check_node_up: not used
+      files:
+        lock: not used
+      directories:
+        extract_dir: not used
+        bin_dir: not used
+        log_dir: not used
+        data_dir: not used
+        config_dir: not used
+        journal: not used
+      node_config_file: ${mongodb_setup.mongod_config_file}
+      pre_cluster_start:
+        - on_localhost:
+            exec: echo "Default message"
+      post_cluster_start:
+        - on_localhost:
+            exec: echo "Default message"
 
     cratedb:
       tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz

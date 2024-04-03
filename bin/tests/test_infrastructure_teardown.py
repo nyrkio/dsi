@@ -35,7 +35,7 @@ class TestInfrastructureTeardown(unittest.TestCase):
         mock_os.chdir.assert_has_calls(chdir_calls)
         mock_os.path.isfile.assert_called_with('cluster.json')
         mock_check_call.assert_called_with(
-            [self.os_environ['TERRAFORM'], 'destroy', '-var-file=cluster.json', '-force'])
+            [self.os_environ['TERRAFORM'], 'destroy', '-var-file=cluster.json', '-auto-approve'])
 
     @patch('infrastructure_teardown.glob.glob')
     @patch('infrastructure_teardown.os')
