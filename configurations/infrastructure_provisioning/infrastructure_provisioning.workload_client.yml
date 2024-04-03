@@ -22,7 +22,7 @@ tfvars:
 
 # The workload_client needs to match the sizing of the Atlas cluster.
 atlas_instance_sizes:
-  not_atlas: c3.8xlarge  # This is the default
+  not_atlas: c7i.8xlarge  # This is the default
   M10-repl: m4.large
   M20-repl: m4.large
   M30-repl: m4.large

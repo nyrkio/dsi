@@ -19,9 +19,11 @@ infrastructure_provisioning:
   # Terraform variables
   tfvars:
     cluster_name: default_cluster_name
-    mongod_instance_count: 1
+    mongod_instance_count: 0
+    mongod_ebs_instance_count: 1
     workload_instance_count: 1
 
+    mongod_ebs_instance_type: c7i.8xlarge
     mongod_instance_type: c7i.8xlarge
     workload_instance_type: c7i.8xlarge
 
