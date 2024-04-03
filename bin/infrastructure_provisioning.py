@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import structlog
 
+from bootstrap import validate_terraform
 from common.log import setup_logging
 from common.config import ConfigDict
 from common.command_runner import run_pre_post_commands, EXCEPTION_BEHAVIOR
@@ -74,7 +75,13 @@ class Provisioner(object):
         self.log_file = log_file
         self.verbose = verbose
         self.provisioning_file = provisioning_file
-
+        bootstrap_config = {
+            'production': self.config["bootstrap"]["production"],
+            'terraform': common.utils.find_terraform(os.getcwd()),
+            'terraform_version_check': self.config["infrastructure_provisioning"]["terraform"].get(
+                "required_version", None)
+            }
+        validate_terraform(os.getcwd(), bootstrap_config)
         # Counter-intuitively, _None_ has the following stream semantics.
         # "With the default settings of None, no redirection will occur; the child's file handles
         # will be inherited from the parent"
