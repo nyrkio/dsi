@@ -280,12 +280,14 @@ def run_tests(config):
     """
     config['test_control']['out'] = {'exit_codes': {}}
     test_control_config = config['test_control']
-    mongodb_setup_config = config['mongodb_setup']
+    cluster_setup_config = config['mongodb_setup']
+    if config['cluster_setup']['meta']['product_name'] != "mongodb":
+        cluster_setup_config = config["cluster_setup"]
 
     prepare_reports_dir()
 
     validate_config(config)
-    run_pre_post_commands('pre_task', [mongodb_setup_config, test_control_config], config,
+    run_pre_post_commands('pre_task', [cluster_setup_config, test_control_config], config,
                           EXCEPTION_BEHAVIOR.EXIT)
 
     if 'test_delay_seconds' in test_control_config:
@@ -313,9 +315,9 @@ def run_tests(config):
                 # Only run between_tests after the first test.
                 if num_tests_run > 0:
                     run_pre_post_commands('between_tests',
-                                          [mongodb_setup_config, test_control_config], config,
+                                          [cluster_setup_config, test_control_config], config,
                                           EXCEPTION_BEHAVIOR.RERAISE)
-                run_pre_post_commands('pre_test', [mongodb_setup_config, test_control_config, test],
+                run_pre_post_commands('pre_test', [cluster_setup_config, test_control_config, test],
                                       config, EXCEPTION_BEHAVIOR.RERAISE, test['id'])
                 background_tasks = start_background_tasks(config, test, test['id'])
 
@@ -348,7 +350,7 @@ def run_tests(config):
                 if 'skip_validate' not in test or not test['skip_validate']:
                     run_validate(config, test['id'])
                 run_pre_post_commands('post_test',
-                                      [test, test_control_config, mongodb_setup_config], config,
+                                      [test, test_control_config, cluster_setup_config], config,
                                       EXCEPTION_BEHAVIOR.CONTINUE, test['id'])
             except:  # pylint: disable=bare-except
                 # The post test activities failing implies the test failing.
@@ -374,7 +376,7 @@ def run_tests(config):
     finally:
         # Save exit codes for analysis.py
         config.save()
-        run_pre_post_commands('post_task', [test_control_config, mongodb_setup_config], config,
+        run_pre_post_commands('post_task', [test_control_config, cluster_setup_config], config,
                               EXCEPTION_BEHAVIOR.CONTINUE)
         perf_json = config['test_control']['perf_json']['path']
         copy_to_reports(reports_dir='reports', perf_json=perf_json)

@@ -4,13 +4,11 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb load mongodb -s
+      ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh load ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s
       -P ../workloadEvergreen
-      -threads ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.load.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}};
+      -threads 64;
     config_filename: workloadEvergreen
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
-      mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
       workload=site.ycsb.workloads.CoreWorkload
@@ -25,15 +23,13 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level100r.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
-        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
+      for level in "1 2 4 8 16 32 64 128"; do
+        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100read \
         -threads $level;
       done
     config_filename: workloadEvergreen_100read
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
-      mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
@@ -49,15 +45,13 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level95-5.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
-        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
+      for level in "1 2 4 8 16 32 64"; do
+        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_95read5update \
         -threads $level;
       done
     config_filename: workloadEvergreen_95read5update
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
-      mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
@@ -73,15 +67,13 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level100u.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
-        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
+      for level in "1 2 4 8 16 32 64"; do
+        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100update \
         -threads $level;
       done
     config_filename: workloadEvergreen_100update
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
-      mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
@@ -97,15 +89,13 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in ${test_control.thread_levels.${mongodb_setup.meta.is_atlas}.level50-50.${mongodb_setup.meta.is_sharded}.${mongodb_setup.meta.storageEngine}}; do
-        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb run mongodb -s \
+      for level in "1 2 4 8 16 32 64"; do
+        ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_50read50update \
         -threads $level;
       done
     config_filename: workloadEvergreen_50read50update
     workload_config: |
-      mongodb.url=${mongodb_setup.meta.mongodb_url}
-      mongodb.fle=${mongodb_setup.meta.is_fle}
       recordcount=5000000
       operationcount=20000000
       maxexecutiontime=240
@@ -119,26 +109,9 @@ run:
 
 
 
-  - id: benchRun
-    type: mongoshell
-    cmd: cd workloads && ${infrastructure_provisioning.numactl_prefix} ./run_workloads.py -c ../workloads.yml
-    config_filename: workloads.yml  # The name used in previous row
-    output_files:
-      - workloads/workload_timestamps.csv
-    workload_config:
-      tests:
-        default:
-          - cpu_noise
-
-      target: ${mongodb_setup.meta.hostname}
-      port: ${mongodb_setup.meta.port}
-      sharded: ${mongodb_setup.meta.is_sharded}
-      replica: ${mongodb_setup.meta.is_replset}
-      shell_ssl_options: ${mongodb_setup.meta.shell_ssl_options}
-
   - id: fio
     type: fio
-    cmd: '${infrastructure_provisioning.numactl_prefix} ./fio-test.sh ${mongodb_setup.meta.hostname}'
+    cmd: '${infrastructure_provisioning.numactl_prefix} ./fio-test.sh ${cluster_setup.meta.hostname}'
     config_filename: fio.ini
     output_files:
       - fio.json
@@ -148,84 +121,29 @@ run:
 
   - id: iperf
     type: iperf
-    cmd: '${infrastructure_provisioning.numactl_prefix} ./iperf-test.sh ${mongodb_setup.meta.hostname}'
+    cmd: '${infrastructure_provisioning.numactl_prefix} ./iperf-test.sh ${cluster_setup.meta.hostname}'
     output_files:
       - iperf.json
     skip_validate: true
 
-# Note: where multiple thread levels support is provided, it is implemented as a bash loop. As a
-# result, arrays MUST be passed as strings.
-# Single values could be strings or numbers BUT in the following configurations string values are
-# passed where ever an array can be used and number literals are passed where a single value (only)
-# can be used.
-# Note: the load test is not run in a loop and only supports a single thread level.
-thread_levels:
-  "False":  # is_atlas
-    load:
-      "True":  # Sharded
-        mmapv1: 16
-        wiredTiger: 64
-      "False":  # Not Sharded
-        mmapv1: 8
-        wiredTiger: 32
-    level100r:
-      "True":  # Sharded
-        mmapv1: "64"
-        wiredTiger: "32 64"
-      "False":  # Not Sharded
-        mmapv1: "32"
-        wiredTiger: "64"
-    level95-5:
-      "True":  # Sharded
-        mmapv1: "64"
-        wiredTiger: "32 64"
-      "False":  # Not Sharded
-        mmapv1: "32"
-        wiredTiger: "32"
-    level100u:
-      "True":  # Sharded
-        mmapv1: "16"
-        wiredTiger: "16 32"
-      "False":  # Not Sharded
-        mmapv1: "32"
-        wiredTiger: "64"
-    level50-50:
-      "True":  # Sharded
-        mmapv1: "64"
-        wiredTiger: "32 16"
-      "False":  # Not Sharded
-        mmapv1: "64"
-        wiredTiger: "64"
 
-  # For Atlas we don't even try to hit the right thread level for each cluster size.
-  # Instead we run all the thread levels, one of them will be the peak.
-  "True":  # is_atlas
-    load:
-      "False":  # Not Sharded
-        wiredTiger: 32
-    level100r:
-      "False":  # Not Sharded
-        wiredTiger: "8 16 32 64 128"
-    level95-5:
-      "False":  # Not Sharded
-        wiredTiger: "8 16 32 64 128"
-    level100u:
-      "False":  # Not Sharded
-        wiredTiger: "8 16 32 64 128"
-    level50-50:
-      "False":  # Not Sharded
-        wiredTiger: "8 16 32 64 128"
+pre_task:
+  - on_workload_client:
+      upload_files:
+        - target: db.properties
+          content: |
+              db.driver=org.postgresql.Driver
+              db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
+              db.user=username
+              db.passwd=password
+
+
+  - on_workload_client:
+      exec_client_shell:
+        connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
+        script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
 
 between_tests:
   - restart_mongodb:
       clean_logs: true
       clean_db_dir: false
-
-pre_task:
-  - on_workload_client:
-      exec_mongo_shell:
-        connection_string: ${mongodb_setup.meta.mongodb_shell_url}
-        # Shard the YCSB cluster if sharding is enabled
-        script: ${test_control.ycsb_sharding_script}
-  - on_workload_client:
-      exec: ${test_control.start_mongo_cryptd}

@@ -39,7 +39,9 @@ infrastructure_provisioning:
     tags:
       expire-on-delta: 2     # adjust expire_on to now + expire-on-delta hours
       owner: perf-terraform-alerts@10gen.com
-  numactl_prefix: numactl --interleave=all --cpunodebind=1
+  # numactl_prefix: numactl --interleave=all --cpunodebind=1
+  # c7i.8xlarge only has 1 socket, this is no longer needed
+  numactl_prefix: ""
   terraform:
     required_version: Terraform v1.7.5
     aws_required_version: 5.43.0
@@ -546,7 +548,7 @@ cluster_setup:
   post_test:
     - on_all_servers:
         retrieve_files:
-          - source: logs/
+          - source: ${cluster_setup.directories.log_dir}
             target: ./
 
   post_task:
