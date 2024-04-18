@@ -101,8 +101,8 @@ infrastructure_provisioning:
 
     install_stuff:
       exec: |
-        sudo yum update
-        sudo yum install -y iproute-tc numactl nano git
+        sudo yum update --quiet
+        sudo yum install -y --quiet iproute-tc numactl nano git > /dev/null
 
   post_provisioning:
     - on_all_hosts: ${infrastructure_provisioning.post_provisioning_steps.install_stuff}
@@ -395,10 +395,10 @@ cluster_setup:
       exec_program: not used
       exec_command: not used
       shutdown_command: not used
-      client_command: not used
-      client_command_file: not used
-      client_command_local: not used
-      client_command_local_file: not used
+      client_command: ./bin/mongo --quiet {connection_string}
+      client_command_file: ./bin/mongo --quiet {connection_string} {command_file}
+      client_command_local: ./bin/mongo --quiet
+      client_command_local_file: ./bin/mongo --quiet
       check_node_up: not used
       files:
         lock: not used
@@ -611,7 +611,9 @@ test_control:
     mongodb:
       ycsb:
         binding_name: mongodb
-        create_table_script: ${test_control.ycsb_sharding_script}
+        create_table_script: |
+          db.getSiblingDB("ycsb").dropDatabase();
+          ${test_control.ycsb_sharding_script}
         dbproperties: |
             mongodb.url=${mongodb_setup.meta.mongodb_url}
 

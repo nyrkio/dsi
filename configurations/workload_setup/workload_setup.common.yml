@@ -237,5 +237,5 @@ sysbench:
 
 
 install_java: |
-    sudo yum install java-21-amazon-corretto-devel -y
+    sudo yum install java-21-amazon-corretto-devel -y --quiet > /dev/null
     java -version

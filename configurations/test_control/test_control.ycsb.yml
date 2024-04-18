@@ -6,6 +6,7 @@ run:
       cd YCSB/;
       ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh load ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s
       -P ../workloadEvergreen
+      -P ../db.properties
       -threads 64;
     config_filename: workloadEvergreen
     workload_config: |
@@ -26,6 +27,7 @@ run:
       for level in "1 2 4 8 16 32 64 128"; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100read \
+        -P ../db.properties \
         -threads $level;
       done
     config_filename: workloadEvergreen_100read
@@ -48,6 +50,7 @@ run:
       for level in "1 2 4 8 16 32 64"; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_95read5update \
+        -P ../db.properties \
         -threads $level;
       done
     config_filename: workloadEvergreen_95read5update
@@ -70,6 +73,7 @@ run:
       for level in "1 2 4 8 16 32 64"; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100update \
+        -P ../db.properties \
         -threads $level;
       done
     config_filename: workloadEvergreen_100update
@@ -92,6 +96,7 @@ run:
       for level in "1 2 4 8 16 32 64"; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_50read50update \
+        -P ../db.properties \
         -threads $level;
       done
     config_filename: workloadEvergreen_50read50update
@@ -131,11 +136,7 @@ pre_task:
   - on_workload_client:
       upload_files:
         - target: db.properties
-          content: |
-              db.driver=org.postgresql.Driver
-              db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
-              db.user=username
-              db.passwd=password
+          content: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.dbproperties}
 
 
   - on_workload_client:
