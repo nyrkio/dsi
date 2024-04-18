@@ -19,6 +19,7 @@ disable=locally-disabled,
         # we can likely get rid of wrong-import-position once we have proper
         # python packages in PERF-1217
         wrong-import-position,
+        wrong-import-order,
 
         # allow calling "priviate" (leading `_`) methods in tests
         protected-access,

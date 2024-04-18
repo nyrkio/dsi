@@ -13,7 +13,7 @@ import subprocess
 import sys
 import threading
 import time
-import yaml
+import ruamel.yaml as yaml
 
 from nose.tools import nottest
 

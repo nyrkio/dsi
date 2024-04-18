@@ -1,6 +1,5 @@
 argparse==1.4.0
-python-dateutil~=2.7.0
-PyYAML~=3.10
+python-dateutil~=2.9.0
 requests~=2.22.0
 jira==1.0.15
 structlog~=24.1.0

@@ -63,6 +63,11 @@ class RunTestsTestCase(unittest.TestCase):
                     ]
                 }
             },
+            'cluster_setup': {
+                'meta': {
+                    'product_name': 'mongodb'
+                }
+            },
             'mongodb_setup': {
                 'post_test': [
                     {'on_all_servers': {

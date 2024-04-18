@@ -11,5 +11,4 @@ from .exit_status import exit
 from .ftdc_analysis import ftdc
 from .log_analysis import log
 from .ycsb_throughput_analysis import ycsb_throughput
-
 from .compare_multiple_reports import compare_reports

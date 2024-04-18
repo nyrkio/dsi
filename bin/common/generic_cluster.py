@@ -7,7 +7,7 @@ import os
 import sys
 import time
 
-import yaml
+import ruamel.yaml as yaml
 
 from common import host_factory
 from common.host_utils import ssh_user_and_key_file

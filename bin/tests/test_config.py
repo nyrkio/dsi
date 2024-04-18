@@ -302,6 +302,7 @@ class ConfigDictTestCase(unittest.TestCase):
         self.assertEqual(
             self.conf['infrastructure_provisioning']['tfvars']['configsvr_instance_type'],
             "t1.micro")
+
         self.assertEqual(
             self.conf['infrastructure_provisioning']['tfvars'].as_dict(), {
                 'cluster_name': 'shard',
@@ -312,11 +313,13 @@ class ConfigDictTestCase(unittest.TestCase):
                 'image': 'ami-0a70b9d193ae8a799',
                 'linux_distro': 'amazon2',
                 'mongod_instance_count': 9,
+                'mongod_ebs_instance_count': 1,
                 'configsvr_instance_count': 3,
                 'mongos_instance_count': 3,
                 'ssh_key_file': '~/.ssh/linustorvalds.pem',
                 'ssh_user': 'ec2-user',
                 'mongod_instance_type': 'c3.8xlarge',
+                'mongod_ebs_instance_type': 'c7i.8xlarge',
                 'ssh_key_name': 'linus.torvalds',
                 'workload_instance_type': 'c3.8xlarge',
                 'tags': {
@@ -582,11 +585,13 @@ class ConfigDictTestCase(unittest.TestCase):
                 'linux_distro': 'amazon2',
                 'region': 'us-west-2',
                 'mongod_instance_count': 9,
+                'mongod_ebs_instance_count': 1,
                 'configsvr_instance_count': 3,
                 'mongos_instance_count': 3,
                 'ssh_key_file': '~/.ssh/linustorvalds.pem',
                 'ssh_user': 'ec2-user',
                 'mongod_instance_type': 'c3.8xlarge',
+                'mongod_ebs_instance_type': 'c7i.8xlarge',
                 'ssh_key_name': 'linus.torvalds',
                 'workload_instance_type': 'c3.8xlarge',
                 'tags': {
@@ -694,8 +699,8 @@ class ConfigDictTestCase(unittest.TestCase):
         """Compare 2 dicts element by element for equal values."""
         dict1keys = list(dict1.keys())
         dict2keys = list(dict2.keys())
-        self.assertEqual(len(dict1keys), len(dict2keys))
         self.assertEqual(set(dict1keys), set(dict2keys))
+        self.assertEqual(len(dict1keys), len(dict2keys))
         for dict1key in dict1keys:
             # Pop the corresponding key from dict2, note that they won't be in the same order.
             dict2key = dict2keys.pop(dict2keys.index(dict1key))

@@ -37,7 +37,8 @@ class TestInfrastructureProvisioning(unittest.TestCase):
         #pylint: disable=line-too-long
         self.config = {
             'bootstrap': {
-                'infrastructure_provisioning': 'single'
+                'infrastructure_provisioning': 'single',
+                'production': True
             },
             'infrastructure_provisioning': {
                 'hostnames': {
@@ -399,8 +400,10 @@ class TestInfrastructureProvisioning(unittest.TestCase):
     @patch('paramiko.SSHClient')
     @patch('common.remote_ssh_host.RemoteSSHHost.create_file')
     @patch('common.remote_ssh_host.RemoteSSHHost.exec_command')
-    def test_setup_hostnames(self, mock_exec_command, mock_create_file, mock_ssh):
+    @patch('infrastructure_provisioning.validate_terraform')
+    def test_setup_hostnames(self, mock_validate, mock_exec_command, mock_create_file, mock_ssh):
         _ = mock_ssh
+        _ = mock_validate
         config_files = os.path.dirname(os.path.abspath(__file__)) + '/../../docs/config-specs/'
         with test_config.in_dir(config_files):
             real_config_dict = ConfigDict('infrastructure_provisioning')
@@ -416,7 +419,9 @@ class TestInfrastructureProvisioning(unittest.TestCase):
             self.assertEqual(mock_create_file.call_count, 16)
             self.assertEqual(mock_exec_command.call_count, 16)
 
-    def test_build_hosts_file(self):
+    @patch('infrastructure_provisioning.validate_terraform')
+    def test_build_hosts_file(self, mock_validate):
+        _ = mock_validate
         expected = [
             '10.2.1.1\tmd md0 mongod0 mongod0.dsitest.dev',
             '10.2.1.2\tmd1 mongod1 mongod1.dsitest.dev',
