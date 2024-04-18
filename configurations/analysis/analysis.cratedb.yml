@@ -2,6 +2,7 @@ checks:
   - exit
   - core
   # - ycsb_throughput
+  - compare_reports
 
 results_json:
   path: report.json

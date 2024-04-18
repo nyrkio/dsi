@@ -12,6 +12,7 @@ checks:
   # Once there is a mechanism to configure this on a per task basis, we can re-enable for other
   # checks.
   # - ycsb_throughput
+  - compare_reports
 
 results_json:
   path: report.json

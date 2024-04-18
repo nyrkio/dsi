@@ -6,3 +6,5 @@ jira==1.0.15
 structlog~=24.1.0
 colorama==0.4.1
 numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.8.4

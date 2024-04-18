@@ -1,6 +1,7 @@
 # Corresponds to python modules available in libanalysis/__init__.py.
 checks:
   - log
+  - compare_reports
 
 results_json:
   path: report.json
