@@ -381,6 +381,10 @@ class TestBootstrap(unittest.TestCase):
         """
         Testing find_terraform when terraform found in path.
         """
+        # Just in case
+        if 'TERRAFORM' in os.environ:
+            del os.environ['TERRAFORM']
+
         mock_check_output.return_value = '/usr/bin/terraform'
         terraform = bootstrap.find_terraform('/', {})
         self.assertEqual(terraform, '/usr/bin/terraform')

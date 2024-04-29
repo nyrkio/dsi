@@ -120,12 +120,12 @@ class ClusterNode(GenericCluster):
 
         self.id = topology.get('id')
         self.cluster_setup = self.config['cluster_setup']
-        self.exec_program = self.cluster_setup['exec_program']
+        self.launch_program = self.cluster_setup['launch_program']
         self.shutdown_command = self.cluster_setup['shutdown_command']
-        if isinstance(self.exec_program, str):
-            self.exec_program = list(self.exec_program)
+        if isinstance(self.launch_program, str):
+            self.launch_program = list(self.launch_program)
 
-        self.exec_command = self.cluster_setup['exec_command']
+        self.launch_command = self.cluster_setup['launch_command']
 
         self.public_ip = topology['node']['public_ip']
         self.private_ip = topology['node'].get('private_ip', self.public_ip)
@@ -262,6 +262,7 @@ class ClusterNode(GenericCluster):
     # pylint: disable=unused-argument
     def launch_cmd(self, use_numactl=True, enable_auth=False):
         """Returns the command to start this node."""
+
         remote_file_name = self.node_config_file["remote_path"]
         config_contents = self.node_config_file['content']
         if not isinstance(config_contents, str):
@@ -275,7 +276,7 @@ class ClusterNode(GenericCluster):
             LOG.info("Uploading config file %s", other_remote_file_name)
             self.host.create_file(other_remote_file_name, config_contents)
 
-        cmd = [self.exec_command]
+        cmd = [self.launch_command]
 
         if use_numactl and self.numactl_prefix:
             if not isinstance(self.numactl_prefix, list):
@@ -297,8 +298,6 @@ class ClusterNode(GenericCluster):
             # Launch request is limited to some nodes, and this node isn't one of them.
             return True
 
-        # initialize is explicitly not used for now for a single node. We may want to use it in
-        # the future
         _ = initialize
         launch_cmd = self.launch_cmd(use_numactl=use_numactl, enable_auth=enable_auth)
         if not self.host.run(launch_cmd):
@@ -366,7 +365,7 @@ class ClusterNode(GenericCluster):
                     self.port,
                 )
 
-            for prog in self.exec_program:
+            for prog in self.launch_program:
                 if self.host.run(["pgrep -l"] + [prog]):
                     LOG.warning(
                         "%s %s:%s did not shutdown yet",
@@ -398,7 +397,7 @@ class ClusterNode(GenericCluster):
             if not return_value:
                 LOG.warning(
                     "%s %s:%s did not shutdown cleanly! Will now SIGKILL and delete lock file.",
-                    self.exec_program,
+                    self.launch_program,
                     self.public_ip,
                     self.port,
                 )
@@ -411,17 +410,17 @@ class ClusterNode(GenericCluster):
         return return_value
 
     def kill(self):
-        """Kill exec_program on remote host."""
+        """Kill launch_program on remote host."""
         return_value = True
-        for prog in self.exec_program:
+        for prog in self.launch_program:
             return_value = return_value and self.host.kill_remote_procs(prog,
                                                                         signal_number='SIGKILL')
         return return_value
 
     def term(self, max_time_ms=None):
-        """Terminate exec_program on remote host."""
+        """Terminate launch_program on remote host."""
         return_value = True
-        for prog in self.exec_program:
+        for prog in self.launch_program:
             return_value = return_value and self.host.kill_remote_procs(
                 prog, signal_number='SIGTERM', max_time_ms=max_time_ms)
         return return_value
@@ -435,4 +434,4 @@ class ClusterNode(GenericCluster):
 
     def __str__(self):
         """String describing this node"""
-        return '{}: {}'.format(self.exec_program[0], self.hostport_public())
+        return '{}: {}'.format(self.launch_program[0], self.hostport_public())

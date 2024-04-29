@@ -65,7 +65,7 @@ class DownloadTar(object):
     def _remote_commands(self, host):
         extract_dir = self.config['cluster_setup']['directories']['extract_dir']
         bin_dir = self.config["cluster_setup"]["directories"]["bin_dir"]
-        cluster_executable = self.config["cluster_setup"]["exec_program"]
+        cluster_executable = self.config["cluster_setup"]["launch_program"]
         if isinstance(cluster_executable, list):
             cluster_executable = cluster_executable[0]
         tmp_file = temp_file(self.cluster_binary_archive)

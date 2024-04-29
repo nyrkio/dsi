@@ -504,7 +504,7 @@ class ConfigDict(dict):
            This function does a similar merge for the rs_conf value for replsets."""
         # pylint: disable=too-many-boolean-expressions
 
-        if self.is_topology_node() and key == 'config_file' and self.module == 'cluster_setup':
+        if self.is_topology_node() and key == 'config_file' and self.module != 'mongodb_setup':
             # Note: In the below 2 lines, overrides and ${variables} are already applied
             common_config = self.root['cluster_setup'].get('node_config_file')
             node_specific_config = self.raw.get(key, {})

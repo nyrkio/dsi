@@ -423,15 +423,26 @@ def dispatch_commands(command_key, command_list, config, current_test_id=None):
                 run_atlas_command(target, command, config, prefix)
             elif target.startswith('on_'):
                 run_host_command(target, command, config, prefix)
-            elif target == "restart_mongodb":
-                # Import here to avoid circular imports
-                import mongodb_setup
-                mongo_controller = mongodb_setup.MongodbSetup(config)
-                clean_db_dir = command['clean_db_dir']
-                clean_logs = command['clean_logs']
-                nodes = command.get('nodes')
-                if not mongo_controller.restart(clean_db_dir, clean_logs, nodes):
-                    raise Exception("Error restarting mongodb")
+            elif target in ["restart_mongodb", "restart_cluster"]:
+                if config["cluster_setup"]["meta"]["product_name"] == "mongodb":
+                    # Import here to avoid circular imports
+                    import mongodb_setup
+                    mongo_controller = mongodb_setup.MongodbSetup(config)
+                    clean_db_dir = command['clean_db_dir']
+                    clean_logs = command['clean_logs']
+                    nodes = command.get('nodes')
+                    if not mongo_controller.restart(clean_db_dir, clean_logs, nodes):
+                        raise Exception("Error restarting mongodb")
+                else:
+                    # Import here to avoid circular imports
+                    import cluster_setup
+                    controller = cluster_setup.ClusterSetup(config)
+                    clean_db_dir = command['clean_db_dir']
+                    clean_logs = command['clean_logs']
+                    nodes = command.get('nodes')
+                    if not controller.restart(clean_db_dir, clean_logs, nodes):
+                        raise Exception("Error restarting cluster")
+
             elif target == "network_delays":
                 # Repackage so it has same structure as ordinary commands
                 run_host_command('on_all_hosts', {"network_delays": command}, config, prefix)

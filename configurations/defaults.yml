@@ -315,8 +315,8 @@ cluster_setup:
 
   # One or more program names started by cluster_setup.py
   # This list is mostly used for pgrep and pkill. The actual start command is in the next row
-  exec_program: ${cluster_setup.product.${cluster_setup.meta.product_name}.exec_program}
-  exec_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.exec_command}
+  launch_program: ${cluster_setup.product.${cluster_setup.meta.product_name}.launch_program}
+  launch_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.launch_command}
   shutdown_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.shutdown_command}
   client_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command}
   client_command_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command_file}
@@ -325,7 +325,7 @@ cluster_setup:
   check_node_up: ${cluster_setup.product.${cluster_setup.meta.product_name}.check_node_up}
 
   files:
-    lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
+    lock: ${cluster_setup.directories.data_dir}/${cluster_setup.launch_program.0}.lock
   directories: ${cluster_setup.product.${cluster_setup.meta.product_name}.directories}
 
   clean_db_dir: true
@@ -392,8 +392,8 @@ cluster_setup:
       meta: ${mongodb_setup.meta}
       numactl: false
       tar_file_url: not used
-      exec_program: not used
-      exec_command: not used
+      launch_program: not used
+      launch_command: not used
       shutdown_command: not used
       client_command: ./bin/mongo --quiet {connection_string}
       client_command_file: ./bin/mongo --quiet {connection_string} {command_file}
@@ -422,13 +422,13 @@ cluster_setup:
 
       numactl: false
 
-      exec_program:
+      launch_program:
         - crate
         - java
 
       # Recent CrateDB versions no longer support the --daemonize/--fork option at all. So we need to
       # use systemctl even if everything is "installed in ec2-user home directory"
-      exec_command: sudo systemctl daemon-reload; sudo systemctl start crate.service
+      launch_command: sudo systemctl daemon-reload; sudo systemctl start crate.service
       shutdown_command: sudo systemctl stop crate.service
       client_command: ./crash --format dynamic --hosts {connection_string} --command "{command}"
       client_command_file: ./crash --format dynamic --hosts {connection_string} --command "\r {command_file}"
@@ -438,7 +438,7 @@ cluster_setup:
       client_command_local_file: ./crash --format dynamic --hosts $(hostname):4200 --command "\r {}"
       check_node_up: SELECT attributes, cluster_state_version, connections,version FROM sys.nodes;
       files:
-        lock: ${cluster_setup.directories.data_dir}/${cluster_setup.exec_program.0}.lock
+        lock: ${cluster_setup.directories.data_dir}/${cluster_setup.launch_program.0}.lock
       directories:
         extract_dir: crate
         bin_dir: crate/bin
@@ -583,7 +583,7 @@ test_control:
     no_output_ms: 5400000  # 90 minutes
   jstests_dir: ./jstests/hooks
   between_tests:
-    - restart_mongodb:
+    - restart_cluster:
         clean_logs: true
         clean_db_dir: true
   # DSI can listen on a port on the workload_client and receive commands of the same format as in

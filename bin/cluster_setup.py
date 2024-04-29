@@ -195,7 +195,7 @@ class ClusterSetup(object):
                                   nodes=nodes):
             LOG.error("Could not set up host in start_cluster")
             return False
-        # Don't initialize if restarting mongodb and keeping (not cleaning) the db dir
+        # Don't initialize if restarting cluster and keeping (not cleaning) the db dir
         initialize = not (is_restart and not restart_clean_db_dir)
         if not cluster.launch(initialize, enable_auth=enable_auth, nodes=nodes):
             LOG.error("Could not launch cluster in start_cluster")
