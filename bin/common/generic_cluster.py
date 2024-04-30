@@ -237,6 +237,7 @@ class ClusterNode(GenericCluster):
         # Clean the logs
         if setup_args['clean_logs']:
             commands.append(['rm', '-rf', os.path.join(setup_args['logdir'], '*.log')])
+            commands.append(['rm', '-rf', os.path.join(setup_args['logdir'], '*.svg')])
             commands.append(['rm', '-rf', os.path.join(setup_args['logdir'], 'core.*')])
         # Create the data/logs directories
         commands.append(['mkdir', '-p', setup_args['logdir']])

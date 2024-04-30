@@ -556,6 +556,24 @@ cluster_setup:
               ./crash --format dynamic --hosts md:4200 --command "SELECT stmt, SUM(ended-started) as sum_t, COUNT(stmt) as num_t, MAX(ended-started) as max_t, AVG(ended-started) as avg_t, MIN(ended-started) as min_t FROM sys.jobs_log GROUP BY stmt ORDER BY sum_t DESC LIMIT 100;" > ./sys.jobs_log.aggregated.out
               # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.jobs_log;" |gzip> ./sys.jobs_log.out.gz
               # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.operations_log;" |gzip> ./sys.operations_log.out.gz
+
+        - on_all_servers:
+            exec: |
+              # sadf also comes with sysstat. And here it's guaranteed to be a compatible version with sar.
+              # Easiest to just generate graphs immediately after each test.
+              cd ${cluster_setup.directories.log_dir}
+              sadf -g sar_datafile.bin.log -- -B > sar_paging-B.svg
+              sadf -g sar_datafile.bin.log -- -b > sar_blocks-b.svg
+              sadf -g sar_datafile.bin.log -- -d > sar_iostat-d.svg
+              sadf -g sar_datafile.bin.log -- -F > sar_mounts-F.svg
+              sadf -g sar_datafile.bin.log -- -H > sar_hugepage-H.svg
+              sadf -g sar_datafile.bin.log -- -q > sar_load-q.svg
+              sadf -g sar_datafile.bin.log -- -r > sar_memory-r.svg
+              sadf -g sar_datafile.bin.log -- -S > sar_swap-S.svg
+              sadf -g sar_datafile.bin.log -- -u > sar_cpu_util-u.svg
+              sadf -g sar_datafile.bin.log -- -v > sar_inode-v.svg
+              sadf -g sar_datafile.bin.log -- -W > sar_swap-W.svg
+
         - on_all_servers:
             retrieve_files:
               - source: ${cluster_setup.directories.log_dir}
@@ -612,7 +630,7 @@ test_control:
 
   background_tasks:
     - on_all_servers:
-        sar: sar -A -o ${cluster_setup.directories.log_dir}/sar_datafile 1
+        sar: sar -A -o ${cluster_setup.directories.log_dir}/sar_datafile.bin.log 1
 
 
 
