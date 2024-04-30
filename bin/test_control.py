@@ -17,6 +17,11 @@ import ruamel.yaml as yaml
 
 from nose.tools import nottest
 
+if sys.version_info[:2] >= (3, 8):
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
+
 from common.delays import safe_reset_all_delays
 from common.exit_status import write_exit_status, ExitStatus, EXIT_STATUS_OK
 from common.utils import mkdir_p
@@ -139,7 +144,7 @@ class BackgroundCommand(object):
         The file is opened with 'wb+' so previous contents will be lost. """
         # 0 => no buffering
         mkdir_p(os.path.dirname(self.filename))
-        with open(self.filename, 'wb+', 0) as out:
+        with open(self.filename, 'w+') as out:
             self.host.exec_command(self.command, stdout=out, stderr=out, get_pty=True)
 
     def stop(self):
@@ -157,26 +162,49 @@ def start_background_tasks(config, command_dict, test_id, reports_dir='./reports
     :param str test: the name of the current test.
     :param str reports_dir: the report directory.
     """
+    command_list = []
     background_tasks = []
-    if 'background_tasks' not in command_dict:
+    background_tasks_spec = {}
+    if 'background_tasks' in config['test_control']:
+        command_list += config['test_control']['background_tasks']
+
+    if 'background_tasks' in command_dict:
+        command_list += command_dict['background_tasks']
+
+    if not command_list:
         LOG.info('%s BackgroundTask:map {}', test_id)
     else:
-        background_tasks_spec = command_dict['background_tasks']
-        LOG.info('%s BackgroundTask:map %s', test_id, background_tasks_spec)
-        task_name = config['test_control']['task_name']
+        LOG.info('%s BackgroundTask:map %s', test_id, command_list)
 
-        for name, command in background_tasks_spec.items():
-            # only a single workload_client is currently possible
-            host_info = extract_hosts('workload_client', config)[0]
-            remote_host = make_host(host_info)
-            basename = "{}.log--{}@{}".format(name, remote_host.user, remote_host.alias)
-            filename = os.path.join(reports_dir, task_name, test_id, basename)
-            background = BackgroundCommand(remote_host, command, filename)
-            thread = threading.Thread(target=background.run)
-            thread.daemon = True
-            thread.start()
+    for item in command_list:
+        # Item should be a map with one entry
+        assert isinstance(item, MutableMapping), 'item in list isn\'t a dict'
+        assert len(item.keys()) == 1, 'item has more than one entry'
+        for target, command in item.items():
+            assert isinstance(command, MutableMapping), "command isn't a dict"
+            assert target.startswith('on_')
 
-            background_tasks.append(background)
+            LOG.debug("target........ %s", str(target))
+            LOG.debug(command)
+
+            target = target[3:]
+            hosts = extract_hosts(target, config)
+            LOG.debug(hosts)
+            remote_hosts = [make_host(host_info) for host_info in hosts]
+            for name, exec_str in command.items():
+                LOG.debug("BackgroundTasks %s on %s", exec_str, target)
+                LOG.debug(remote_hosts)
+
+                for remote_host in remote_hosts:
+                    basename = "{}.log--{}@{}".format(name, remote_host.user, remote_host.alias)
+                    filename = os.path.join(reports_dir, test_id, basename)
+                    background = BackgroundCommand(remote_host, exec_str, filename)
+                    thread = threading.Thread(target=background.run)
+                    thread.daemon = True
+                    thread.start()
+                    LOG.info("Started BackgroundTask %s on %s", name, remote_host.alias)
+
+                    background_tasks.append(background)
 
     return background_tasks
 
@@ -189,6 +217,8 @@ def stop_background_tasks(background_tasks):
 
         for background_task in background_tasks:
             background_task.stop()
+    else:
+        LOG.debug('No BackgroundTask to stop.')
 
 
 @nottest

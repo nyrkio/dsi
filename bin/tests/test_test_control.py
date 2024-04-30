@@ -14,6 +14,7 @@ from mock import patch, mock_open, Mock, call
 from testfixtures import LogCapture
 
 import common.host_utils
+from common.models.host_info import HostInfo
 from common.command_runner import EXCEPTION_BEHAVIOR
 from common.command_runner import print_trace
 from common.command_runner import run_pre_post_commands
@@ -390,7 +391,11 @@ class RunTestsTestCase(unittest.TestCase):
         with patch('test_control.open', mock_open()) as mock_file:
             mock_out = mock_file.return_value
             subject.run()
-            mock_file.assert_called_with('dirname/basename', 'wb+', 0)
+            # In python3 you can no longer feed text data into a binary file object.
+            # Considering that this is just the end point on the mission control host, it seemed
+            #like the most straightforward fix to not insist on the sync stream here.
+            #mock_file.assert_called_with('dirname/basename', 'wb+', 0)
+            mock_file.assert_called_with('dirname/basename', 'w+')
             mock_makedirs.assert_called_with('dirname')
             mock_host.exec_command.assert_called_with('command',
                                                       stdout=mock_out,
@@ -408,13 +413,21 @@ class RunTestsTestCase(unittest.TestCase):
     @patch('test_control.extract_hosts')
     def test_start_background_tasks(self, mock_extract_hosts, mock_make_host):
         """ Test start_background_tasks"""
+
+        mock_extract_hosts.return_value = [
+            HostInfo(public_ip='localhost', private_ip='localhost', category='localhost', offset=0)
+        ]
+
         # Add some background tasks to our config
         config = copy.deepcopy(self.config)
-        config['test_control']['run'][0]['background_tasks'] = {
-            'background_task_one': 'mock_background_task',
-            'background_task_two': 'mock_background_task',
-            'background_task_three': 'mock_background_task'
-        }
+        config['test_control']['run'][0]['background_tasks'] = [{
+            "on_workload_client": {
+                'background_task_one': 'mock_background_task',
+                'background_task_two': 'mock_background_task',
+                'background_task_three': 'mock_background_task'
+            }
+        }]
+
         test_id = 'benchRun'
 
         with patch('test_control.BackgroundCommand'):

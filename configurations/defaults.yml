@@ -221,9 +221,9 @@ mongodb_setup:
 
   meta:
     # A single host, as in "host:port". Use the primary or first mongos
-    hostname: ${mongodb_setup.topology.0.mongos.0.private_ip}
+    hostname: md
     # The list of hosts that can be used in a mongodb connection string
-    hosts: ${mongodb_setup.topology.0.private_ip}:27017
+    hosts: md:27017
     # This lets you easily append &replicaSet=foo or other url params
     # but still keep the base url with authentication etc.
     # This param in general shouldn't be overwritten.
@@ -383,6 +383,7 @@ cluster_setup:
 
   pre_cluster_start: ${cluster_setup.product.${cluster_setup.meta.product_name}.pre_cluster_start}
   post_cluster_start: ${cluster_setup.product.${cluster_setup.meta.product_name}.post_cluster_start}
+  post_test: ${cluster_setup.product.${cluster_setup.meta.product_name}.post_test}
 
 
   # Default configs, by product name
@@ -416,6 +417,11 @@ cluster_setup:
       post_cluster_start:
         - on_localhost:
             exec: echo "Default message"
+      post_test:
+        - on_all_servers:
+            retrieve_files:
+              - source: ${cluster_setup.directories.log_dir}
+                target: ./
 
     cratedb:
       tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
@@ -543,13 +549,25 @@ cluster_setup:
                   GRANT ALL PRIVILEGES to username;
 
 
-
-
-  post_test:
-    - on_all_servers:
-        retrieve_files:
-          - source: ${cluster_setup.directories.log_dir}
-            target: ./
+      post_test:
+        - on_workload_client:
+            exec: |
+              ./crash --format dynamic --hosts md:4200 --command "SELECT * FROM sys.jobs_metrics LIMIT 100;"> ./sys.jobs_metrics.out
+              ./crash --format dynamic --hosts md:4200 --command "SELECT stmt, SUM(ended-started) as sum_t, COUNT(stmt) as num_t, MAX(ended-started) as max_t, AVG(ended-started) as avg_t, MIN(ended-started) as min_t FROM sys.jobs_log GROUP BY stmt ORDER BY sum_t DESC LIMIT 100;" > ./sys.jobs_log.aggregated.out
+              # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.jobs_log;" |gzip> ./sys.jobs_log.out.gz
+              # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.operations_log;" |gzip> ./sys.operations_log.out.gz
+        - on_all_servers:
+            retrieve_files:
+              - source: ${cluster_setup.directories.log_dir}
+                target: ./
+        - on_workload_client:
+            retrieve_files:
+              - source: ./sys.jobs_log.aggregated.out
+                target: ./sys.jobs_log.aggregated.out
+        - on_workload_client:
+            retrieve_files:
+              - source: ./sys.jobs_metrics.out
+                target: ./sys.jobs_metrics.out
 
   post_task:
     - on_all_servers:
@@ -573,8 +591,13 @@ cluster_setup:
     - on_all_servers:
         exec: |
           (df; du  --max-depth 1 ./data) | sed "s/^/$(hostname): /"
+    - on_all_servers:
         retrieve_files:
           - source: data/logs/
+            target: ./
+    - on_all_servers:
+        retrieve_files:
+          - source: ./logs/
             target: ./
 
 test_control:
@@ -586,6 +609,14 @@ test_control:
     - restart_cluster:
         clean_logs: true
         clean_db_dir: true
+
+  background_tasks:
+    - on_all_servers:
+        sar: sar -A -o ${cluster_setup.directories.log_dir}/sar_datafile 1
+
+
+
+
   # DSI can listen on a port on the workload_client and receive commands of the same format as in
   # pre_test, post_test, etc. (In particular, restart_mongodb.)
   dsisocket:
