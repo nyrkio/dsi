@@ -1,0 +1,49 @@
+# TODO journal_dir: /media/ebs2/journal
+
+# Meta data about this cluster setup
+meta:
+  product_name: cratedb
+  is_replset: false
+
+node_config_file:
+  remote_path: crate/config/crate.yml
+  content: |
+    path:
+      data: data
+      logs: logs
+    network:
+      host: _site_
+    auth:
+      host_based:
+        config:
+          0:
+            user: crate
+            address: _site_
+            method: trust
+          99:
+            method: password
+    discovery:
+      seed_hosts:
+        - ${infrastructure_provisioning.out.mongod.0.private_ip}:4300
+    gateway:
+      recover_after_data_nodes: 3
+      expected_data_nodes: 3
+    cluster:
+      initial_master_nodes:
+        - ${infrastructure_provisioning.out.mongod.0.private_ip}:4300
+      name: ${cluster_setup.topology.0.id}
+    node:
+     master: true
+
+
+topology:
+  - cluster_type: replset
+    id: myrs0
+    node:
+      # TODO: in the following 2 lines mongod is simply a terraform host type. No mongod is actually running there.
+      - public_ip: ${infrastructure_provisioning.out.mongod.0.public_ip}
+        private_ip: ${infrastructure_provisioning.out.mongod.0.private_ip}
+      - public_ip: ${infrastructure_provisioning.out.mongod.1.public_ip}
+        private_ip: ${infrastructure_provisioning.out.mongod.1.private_ip}
+      - public_ip: ${infrastructure_provisioning.out.mongod.2.public_ip}
+        private_ip: ${infrastructure_provisioning.out.mongod.2.private_ip}

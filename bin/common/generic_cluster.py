@@ -2,6 +2,7 @@
 Classes to control MongoDB clusters.
 """
 
+from functools import partial
 import logging
 import os
 import sys
@@ -13,6 +14,7 @@ from common import host_factory
 from common.host_utils import ssh_user_and_key_file
 from common.models.host_info import HostInfo
 from common.config import copy_obj
+from common.thread_runner import run_threads
 
 LOG = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ def create_cluster(topology, config):
     if cluster_type == 'standalone':
         return ClusterNode(topology=topology, config=config)
     elif cluster_type == 'replset':
-        raise NotImplementedError()
+        return ReplSet(topology=topology, config=config)
     elif cluster_type == 'sharded_cluster':
         raise NotImplementedError()
     LOG.fatal('unknown cluster_type: %s', cluster_type)
@@ -49,6 +51,8 @@ class GenericCluster(object):
         """
         self.config = config
         self.topology = topology
+        self.product_name = config["cluster_setup"]["meta"]["product_name"]
+        self.connection_string = config["cluster_setup"]["meta"]["connection_string"]
 
     def wait_until_up(self):
         """ Checks to make sure node is up and accessible"""
@@ -106,13 +110,6 @@ class ClusterNode(GenericCluster):
         {
             'public_ip': '127.0.0.1',
             'private_ip': '127.0.0.1',
-            'config_file': {},
-            'mongo_dir': '/usr/bin',
-            'priority': 10,
-            'clean_logs': True,
-            'clean_db_dir': True,
-            'is_mongos': False,
-            'is_configsvr': False
         }
         :param config: root ConfigDict
         """
@@ -127,8 +124,8 @@ class ClusterNode(GenericCluster):
 
         self.launch_command = self.cluster_setup['launch_command']
 
-        self.public_ip = topology['node']['public_ip']
-        self.private_ip = topology['node'].get('private_ip', self.public_ip)
+        self.public_ip = topology['public_ip']
+        self.private_ip = topology.get('private_ip', self.public_ip)
         self.bin_dir = self.cluster_setup['directories'].get('bin_dir', 'bin')
 
         # NB: we could specify these defaults in default.yml if not already!
@@ -190,7 +187,7 @@ class ClusterNode(GenericCluster):
         check_string = self.cluster_setup["check_node_up"]
         i = 0
         dump = False
-        while not self.exec_client_shell(check_string.format(self.public_ip),
+        while not self.exec_client_shell(check_string.format(self.private_ip),
                                          dump_on_error=dump) and i < 10:
             i += 1
             if i == 9:
@@ -310,7 +307,7 @@ class ClusterNode(GenericCluster):
     def exec_client_shell(self, exec_string, max_time_ms=None, dump_on_error=True):
         """
         Execute `exec_string` in the client's shell on the underlying host
-        :param str js_string: the javascript to evaluate.
+        :param str exec_string: the javascript to evaluate.
         For the max_time_ms parameter, see
             :method:`Host.exec_command`
         :param bool dump_on_error: print 100 lines of the cluster node's log on error
@@ -436,3 +433,132 @@ class ClusterNode(GenericCluster):
     def __str__(self):
         """String describing this node"""
         return '{}: {}'.format(self.launch_program[0], self.hostport_public())
+
+
+class ReplSet(GenericCluster):
+    """Represents a replica set on remote hosts."""
+
+    replsets = 0
+    """Counts the number of ReplSets created."""
+    def __init__(self, topology, config):
+        """
+        :param topology: Read-only options for  replSet, example:
+        {
+            'id': 'replSetName',
+            'node': [{public_ip: ..., ...}, ...],
+        }
+        :param config: root ConfigDict
+        """
+        super(ReplSet, self).__init__(topology, config)
+
+        self.id = topology.get('id')
+        if not self.id:
+            self.id = 'rs{}'.format(ReplSet.replsets)
+        if self.id == 'rs{}'.format(ReplSet.replsets):
+            ReplSet.replsets += 1
+
+        self.nodes = []
+
+        for opt in topology['node']:
+            node_opt = copy_obj(opt)
+            self.nodes.append(ClusterNode(topology=node_opt, config=self.config))
+
+    def wait_until_up(self):
+        """ Checks and waits for all nodes in replica set to be ready"""
+
+        for node in self.nodes:
+            if not node.wait_until_up():
+                return False
+
+        # TODO Some select to verify the cluster is created and operational
+        return True
+
+    def setup_host(self, restart_clean_db_dir=None, restart_clean_logs=None, nodes=None):
+        if isinstance(nodes, list) and self.id in nodes:
+            # Launch everything in this replset, no need for caller to list every node separately
+            nodes = None
+
+        return all(
+            run_threads([
+                partial(node.setup_host,
+                        restart_clean_db_dir=restart_clean_db_dir,
+                        restart_clean_logs=restart_clean_logs,
+                        nodes=nodes) for node in self.nodes
+            ],
+                        daemon=True))
+
+    def launch(self, initialize=True, use_numactl=True, enable_auth=False, nodes=None):
+        """
+        Starts the replica set.
+
+        :param boolean initialize: Initialize the replica set
+        """
+        _ = initialize
+        if isinstance(nodes, list) and self.id in nodes:
+            # Launch everything in this replset
+            nodes = None
+
+        if not all(
+                run_threads([
+                    partial(node.launch,
+                            initialize,
+                            use_numactl=use_numactl,
+                            enable_auth=enable_auth,
+                            nodes=nodes) for node in self.nodes
+                ],
+                            daemon=True)):
+            return False
+        # Wait for all nodes to be up
+        return self.wait_until_up()
+
+    def exec_client_shell(self, exec_string, max_time_ms=None, dump_on_error=True):
+        """
+        Execute `exec_string` in the client's shell on the underlying host
+        :param str exec_string: the javascript to evaluate.
+        For the max_time_ms parameter, see
+            :method:`Host.exec_command`
+        :param bool dump_on_error: print 100 lines of the cluster node's log on error
+        :return: True if the client shell exits successfully
+        """
+        if len(self.nodes) >= 1:
+            return self.nodes[0].exec_client_shell(exec_string, max_time_ms, dump_on_error)
+        else:
+            raise RuntimeError("This cluster / replica set doesn't have any member nodes.")
+
+    def shutdown(self, max_time_ms, auth_enabled=None, retries=20, nodes=None):
+        """Shutdown gracefully
+        For the max_time_ms parameter, see
+            :method:`Host.exec_command`
+        """
+        if isinstance(nodes, list) and self.id in nodes:
+            # Shutdown everything in this replset
+            nodes = None
+
+        return all(
+            run_threads([
+                partial(node.shutdown, max_time_ms, auth_enabled, retries, nodes)
+                for node in self.nodes
+            ],
+                        daemon=True))
+
+    def destroy(self, max_time_ms, nodes=None):
+        """Kills the remote replica members.
+        For the max_time_ms parameter, see
+            :method:`Host.exec_command`
+        """
+        if isinstance(nodes, list) and self.id in nodes:
+            # Shutdown everything in this replset
+            nodes = None
+
+        run_threads([partial(node.destroy, max_time_ms, nodes) for node in self.nodes], daemon=True)
+
+    def close(self):
+        """Closes SSH connections to remote hosts."""
+        run_threads([node.close for node in self.nodes], daemon=True)
+
+    def __str__(self):
+        """String describing this ReplSet"""
+        return '{} ReplSet: {} ({} nodes)'.format(
+            self.product_name, self.connection_string, len(self.nodes)
+        )
+

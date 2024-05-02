@@ -46,9 +46,3 @@ pre_task:
       exec_client_shell:
         connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
         script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
-
-between_tests:
-  - on_workload_client:
-      exec: |
-         echo "sleep instead of restart"
-         sleep 60

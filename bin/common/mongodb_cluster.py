@@ -570,7 +570,7 @@ class ReplSet(MongoCluster):
 
     def setup_host(self, restart_clean_db_dir=None, restart_clean_logs=None, nodes=None):
         if isinstance(nodes, list) and self.id in nodes:
-            # Launch everything in this replset
+            # Launch everything in this replset, no need for caller to list every node separately
             nodes = None
 
         return all(

@@ -3,8 +3,3 @@ tfvars:
   # Note that all tfvars values have defaults, and are therefore optional
   cluster_name: single
 
-  region: us-west-2
-  availability_zone: us-west-2a
-
-  tags:
-    expire-on-delta: 3      # adjust expire_on to now + expire-on-delta hours

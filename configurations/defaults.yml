@@ -473,9 +473,9 @@ cluster_setup:
 
 
       meta:
-        hosts: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
-        hostname: ${cluster_setup.topology.0.node.private_ip}
-        connection_string: ${cluster_setup.topology.0.node.private_ip}:${cluster_setup.meta.port}
+        hosts: ${cluster_setup.topology.0.node.0.private_ip}:${cluster_setup.meta.port}
+        hostname: ${cluster_setup.topology.0.node.0.private_ip}
+        connection_string: ${cluster_setup.topology.0.node.0.private_ip}:${cluster_setup.meta.port}
         port: 4200
         is_sharded: false
         is_replset: false
