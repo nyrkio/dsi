@@ -27,3 +27,13 @@ tfvars:
 
 # Atlas uses a readahead setting of 256.
 read_ahead: 256
+
+# Meta-data about this instance type. Can be used for example to parameterize later configuration
+# so that it is based on number of cpu's or memory.
+meta:
+  nodes_in_cluster: 3 # Counting mongod instance, not wc
+  cpu_per_host: 8 # Note: we turn off hyperthreading
+  cpu_total_cluster: 24
+  memory_per_cpu_gb: 8
+  memory_per_host_gb: 64
+  memory_total_cluster: 196

@@ -20,6 +20,16 @@ tfvars:
   region: us-east-1
   availability_zone: us-east-1a
 
+# Meta-data about this instance type. Can be used for example to parameterize later configuration
+# so that it is based on number of cpu's or memory.
+meta:
+  nodes_in_cluster: 0 # Counting mongod instance, not wc
+  cpu_per_host: 0 # Note: we turn off hyperthreading
+  cpu_total_cluster: 0
+  memory_per_cpu_gb: 0
+  memory_per_host_gb: 0
+  memory_total_cluster: 0
+
 # The workload_client needs to match the sizing of the Atlas cluster.
 atlas_instance_sizes:
   not_atlas: c7i.8xlarge  # This is the default

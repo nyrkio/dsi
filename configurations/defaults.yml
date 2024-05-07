@@ -51,6 +51,19 @@ infrastructure_provisioning:
     # aws_required_version: 2.40.0
     # linux_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_linux_amd64.zip
     # mac_download: https://releases.hashicorp.com/terraform/0.12.16/terraform_0.12.16_darwin_amd64.zip
+
+  # Meta-data about this instance type. Can be used for example to parameterize later configuration
+  # so that it is based on number of cpu's or memory.
+  meta:
+    nodes_in_cluster: 3 # Counting mongod instance, not wc
+    cpu_per_host: 16 # Note: we turn off hyperthreading
+    cpu_total_cluster: 48
+    memory_per_cpu_gb: 4
+    memory_per_host_gb: 64
+    memory_total_cluster: 196
+
+
+
   # System related defaults for network_delays command
   network_delays:
     # Currently only a single device is supported here

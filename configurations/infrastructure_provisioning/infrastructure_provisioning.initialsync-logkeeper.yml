@@ -21,3 +21,13 @@ tfvars:
 
   tags:
     expire-on-delta: 11     # adjust expire_on to now + expire-on-delta hours
+
+# Meta-data about this instance type. Can be used for example to parameterize later configuration
+# so that it is based on number of cpu's or memory.
+meta:
+  nodes_in_cluster: 2 # Counting mongod instance, not wc
+  cpu_per_host: 16 # Note: we turn off hyperthreading
+  cpu_total_cluster: 32
+  memory_per_cpu_gb: 4
+  memory_per_host_gb: 64
+  memory_total_cluster: 128
