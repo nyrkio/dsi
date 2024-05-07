@@ -47,3 +47,10 @@ topology:
         private_ip: ${infrastructure_provisioning.out.mongod.1.private_ip}
       - public_ip: ${infrastructure_provisioning.out.mongod.2.public_ip}
         private_ip: ${infrastructure_provisioning.out.mongod.2.private_ip}
+
+pre_test:
+  - on_workload_client:
+      exec_client_shell:
+        connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
+        script: |
+          ALTER TABLE ycsb.usertable SET (number_of_replicas = 3);
