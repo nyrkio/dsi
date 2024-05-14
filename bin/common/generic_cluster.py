@@ -34,7 +34,7 @@ def create_cluster(topology, config):
     elif cluster_type == 'replset':
         return ReplSet(topology=topology, config=config)
     elif cluster_type == 'sharded_cluster':
-        raise NotImplementedError()
+        return ShardedCluster(topology=topology, config=config)
     LOG.fatal('unknown cluster_type: %s', cluster_type)
     return sys.exit(1)
 
@@ -439,6 +439,8 @@ class ReplSet(GenericCluster):
     """Represents a replica set on remote hosts."""
 
     replsets = 0
+    nodes = None
+    id = None
     """Counts the number of ReplSets created."""
     def __init__(self, topology, config):
         """
@@ -558,7 +560,19 @@ class ReplSet(GenericCluster):
 
     def __str__(self):
         """String describing this ReplSet"""
-        return '{} ReplSet: {} ({} nodes)'.format(
-            self.product_name, self.connection_string, len(self.nodes)
-        )
+        return '{} ReplSet: {} ({} nodes)'.format(self.product_name, self.connection_string,
+                                                  len(self.nodes))
 
+    def add_default_users(self):
+        raise NotImplementedError()
+
+
+class ShardedCluster(ReplSet):
+    """Represents a sharded cluster on remote hosts.
+
+       For CrateDB there isn't really anything for us to do compared to creating a replica set.
+       So for now, I just created this class, but it's identical to a ReplSet. To use sharding,
+       just define the number of shards in each CREATE/ALTER TABLE.
+    """
+    def add_default_users(self):
+        raise NotImplementedError()

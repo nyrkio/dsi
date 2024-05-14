@@ -16,6 +16,9 @@ infrastructure_provisioning:
     # Supported methods: /etc/hosts and null
     method: /etc/hosts
     domain: dsitest.dev
+
+  use_placement_group: false
+
   # Terraform variables
   tfvars:
     cluster_name: default_cluster_name
@@ -55,8 +58,8 @@ infrastructure_provisioning:
   # Meta-data about this instance type. Can be used for example to parameterize later configuration
   # so that it is based on number of cpu's or memory.
   meta:
-    nodes_in_cluster: 3 # Counting mongod instance, not wc
-    cpu_per_host: 16 # Note: we turn off hyperthreading
+    nodes_in_cluster: 3  # Counting mongod instance, not wc
+    cpu_per_host: 16  # Note: we turn off hyperthreading
     cpu_total_cluster: 48
     memory_per_cpu_gb: 4
     memory_per_host_gb: 64
@@ -360,8 +363,8 @@ cluster_setup:
       id: myid1
       node:
         # TODO: in the following 2 lines mongod is simply a terraform host type. No mongod is actually running there.
-        public_ip: ${infrastructure_provisioning.out.mongod.0.public_ip}
-        private_ip: ${infrastructure_provisioning.out.mongod.0.private_ip}
+        - public_ip: ${infrastructure_provisioning.out.mongod.0.public_ip}
+          private_ip: ${infrastructure_provisioning.out.mongod.0.private_ip}
 
 
   # Meta data about this cluster setup
@@ -691,7 +694,8 @@ test_control:
                   FIELD4 TEXT, FIELD5 TEXT,
                   FIELD6 TEXT, FIELD7 TEXT,
                   FIELD8 TEXT, FIELD9 TEXT
-              );
+              )
+              CLUSTERED BY (YCSB_KEY) INTO ${infrastructure_provisioning.meta.cpu_total_cluster} shards;
         dbproperties: |
               db.driver=org.postgresql.Driver
               db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
