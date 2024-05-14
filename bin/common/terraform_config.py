@@ -49,7 +49,7 @@ def is_placement_group_needed(node_type, tfvars):
     return False
 
 
-def generate_placement_group(tfvars, prefix="dsi"):
+def generate_placement_group(tfvars, prefix="dsi", use_placement_group=True):
     """
     Define a placement_group name that is different for each cluster.
 
@@ -66,9 +66,10 @@ def generate_placement_group(tfvars, prefix="dsi"):
     tfvars['placement_group'] = unique_placement_group
     LOG.debug("Generated new placement group: %s", unique_placement_group)
 
-    for node_type in TF_NODE_TYPES_TO_CHECK:
-        if is_placement_group_needed(node_type, tfvars):
-            tfvars[node_type + '_placement_group'] = unique_placement_group
+    if use_placement_group:
+        for node_type in TF_NODE_TYPES_TO_CHECK:
+            if is_placement_group_needed(node_type, tfvars):
+                tfvars[node_type + '_placement_group'] = unique_placement_group
 
     return tfvars
 
@@ -155,11 +156,12 @@ class TerraformConfiguration(object):
         :param str file_name: The name of the output json file
         """
         self.config = config
+        self.use_placement_group = config["infrastructure_provisioning"]["use_placement_group"]
 
         self.tfvars = {}
         self.set_tfvars()
-        # Since this is a new cluster, generate a unique id for the placement group to be
-        self.tfvars = generate_placement_group(self.tfvars, self.tfvars.get("cluster_name"))
+        self.tfvars = generate_placement_group(self.tfvars, self.tfvars.get("cluster_name"),
+                                               self.use_placement_group)
         # Cluster metadata
         self.tfvars["runner_hostname"] = generate_runner_hostname()
         self.refresh_tfvars()
