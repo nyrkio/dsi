@@ -17,8 +17,8 @@ tfvars:
 # Meta-data about this instance type. Can be used for example to parameterize later configuration
 # so that it is based on number of cpu's or memory.
 meta:
-  nodes_in_cluster: 9 # Counting mongod instance, not wc. Also not counting mongos nodes.
-  cpu_per_host: 16 # Note: we turn off hyperthreading
+  nodes_in_cluster: 9  # Counting mongod instance, not wc. Also not counting mongos nodes.
+  cpu_per_host: 16  # Note: we turn off hyperthreading
   cpu_total_cluster: 144
   memory_per_cpu_gb: 4
   memory_per_host_gb: 64
