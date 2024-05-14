@@ -9,7 +9,7 @@ import os
 import shutil
 import unittest
 
-from mock import patch, call, mock_open, MagicMock
+from mock import patch, call, mock_open, MagicMock, ANY
 from testfixtures import log_capture
 
 from common.config import ConfigDict
@@ -396,6 +396,18 @@ class TestInfrastructureProvisioning(unittest.TestCase):
             ('infrastructure_provisioning', 'ERROR',
              '[error    ] For more info, see:            [infrastructure_provisioning] '
              'path={}'.format(FIXTURE_FILES.fixture_file_path('terraform.stdout.log'))))
+
+    @patch('infrastructure_provisioning.run_pre_post_commands')
+    def test_post_provisioning_only(self, mock_pre_post):
+        """
+        Test infrastructure_provisioning.print_terraform_errors()
+        """
+        # pylint: disable=line-too-long
+        provisioner = ip.Provisioner(self.config,
+                                     provisioning_file=self.provision_log_path,
+                                     post_provisioning_only=True)
+        provisioner.provision_resources()
+        mock_pre_post.assert_called_with("post_provisioning", ANY, ANY, ANY)
 
     @patch('paramiko.SSHClient')
     @patch('common.remote_ssh_host.RemoteSSHHost.create_file')

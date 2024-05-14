@@ -42,14 +42,15 @@ def rmtree_when_present(tree_path):
         LOG.info("rmtree_when_present: No such path", arg=tree_path)
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-arguments
 class Provisioner(object):
     """ Used to provision AWS resources """
     def __init__(self,
                  config,
                  log_file=TF_LOG_PATH,
                  provisioning_file=PROVISION_LOG_PATH,
-                 verbose=False):
+                 verbose=False,
+                 post_provisioning_only=False):
         self.config = config
         ssh_key_file = config['infrastructure_provisioning']['tfvars']['ssh_key_file']
         ssh_key_file = os.path.expanduser(ssh_key_file)
@@ -74,6 +75,7 @@ class Provisioner(object):
 
         self.log_file = log_file
         self.verbose = verbose
+        self.post_provisioning_only = post_provisioning_only
         self.provisioning_file = provisioning_file
         bootstrap_config = {
             'production':
@@ -155,9 +157,16 @@ class Provisioner(object):
     def setup_cluster(self):
         """
         Runs terraform to provision the cluster
+
+        Create and copy needed security.tf and terraform.tf files into current work directory
         """
         # pylint: disable=too-many-statements
-        # Create and copy needed security.tf and terraform.tf files into current work directory
+        if self.post_provisioning_only:
+            # Run post provisioning scripts.
+            run_pre_post_commands("post_provisioning", [self.config['infrastructure_provisioning']],
+                                  self.config, EXCEPTION_BEHAVIOR.EXIT)
+            return
+
         self.setup_security_tf()
         self.setup_terraform_tf()
         LOG.info('terraform: init')
@@ -376,6 +385,9 @@ def parse_command_line():
     parser = argparse.ArgumentParser(description='Provision EC2 instances on AWS using terraform.')
     parser.add_argument('--log-file', help='path to log file')
     parser.add_argument('-d', '--debug', action='store_true', help='enable debug output')
+    parser.add_argument('--post-provisioning',
+                        action='store_true',
+                        help='Just run the post_provisioning hooks, not terraform.')
     args = parser.parse_args()
     return args
 
@@ -386,7 +398,9 @@ def main():
     setup_logging(args.debug, args.log_file)
     config = ConfigDict('infrastructure_provisioning')
     config.load()
-    provisioner = Provisioner(config, verbose=args.debug)
+    provisioner = Provisioner(config,
+                              verbose=args.debug,
+                              post_provisioning_only=args.post_provisioning)
     provisioner.provision_resources()
 
 
