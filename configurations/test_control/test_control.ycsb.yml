@@ -24,7 +24,7 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in "1 2 4 8 16 32 64 128"; do
+      for level in 1 2 4 8 16 32 64 128; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100read \
         -P ../db.properties \
@@ -47,7 +47,7 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in "1 2 4 8 16 32 64"; do
+      for level in 1 2 4 8 16 32 64; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_95read5update \
         -P ../db.properties \
@@ -70,7 +70,7 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in "1 2 4 8 16 32 64"; do
+      for level in 1 2 4 8 16 32 64; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_100update \
         -P ../db.properties \
@@ -93,7 +93,7 @@ run:
     type: ycsb
     cmd: >
       cd YCSB/;
-      for level in "1 2 4 8 16 32 64"; do
+      for level in 1 2 4 8 16 32 64; do
         ${infrastructure_provisioning.numactl_prefix} ./bin/ycsb.sh run ${test_control.product.${cluster_setup.meta.product_name}.ycsb.binding_name} -s \
         -P ../workloadEvergreen_50read50update \
         -P ../db.properties \
@@ -145,6 +145,6 @@ pre_task:
         script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
 
 between_tests:
-  - restart_mongodb:
+  - restart_cluster:
       clean_logs: true
       clean_db_dir: false

@@ -40,9 +40,8 @@ pre_task:
               db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
               db.user=username
               db.passwd=password
-
-
   - on_workload_client:
       exec_client_shell:
         connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
         script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
+
