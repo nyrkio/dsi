@@ -124,8 +124,8 @@ class ClusterNode(GenericCluster):
 
         self.launch_command = self.cluster_setup['launch_command']
 
-        self.public_ip = topology['public_ip']
-        self.private_ip = topology.get('private_ip', self.public_ip)
+        self.public_ip = topology['node'][0]['public_ip']
+        self.private_ip = topology['node'][0].get('private_ip', self.public_ip)
         self.bin_dir = self.cluster_setup['directories'].get('bin_dir', 'bin')
 
         # NB: we could specify these defaults in default.yml if not already!

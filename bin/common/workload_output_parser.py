@@ -430,6 +430,21 @@ class SysbenchResultParser(ResultParser):
                             str(self.threads))
 
 
+class TsbsResultParser(ResultParser):
+    """A ResultParser for TimeSeries Benchmark Suite"""
+    def __init__(self, test, config, timer):
+        """Set sysbench specific attributes"""
+        super(TsbsResultParser, self).__init__(test, config, timer)
+        input_file = config['test_control']['output_file']['tsbs']
+        self.input_log = os.path.join(self.reports_root, test['id'], input_file)
+        self.threads = None  # We postpone this to _parse()
+
+    def _parse(self):
+        """
+        """
+        pass
+
+
 class FioParser(ResultParser):
     """A ResultParser of fio results in fio.json"""
     def __init__(self, test, config, timer):
@@ -530,7 +545,8 @@ PARSERS = {
     'linkbench': LinkbenchResultParser,
     'tpcc': TPCCResultParser,
     'genny': GennyResultsParser,
-    'sysbench': SysbenchResultParser
+    'sysbench': SysbenchResultParser,
+    'tsbs': TsbsResultParser
 }
 
 

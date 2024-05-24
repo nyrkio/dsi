@@ -416,6 +416,7 @@ def dispatch_commands(command_key, command_list, config, current_test_id=None):
 
     for item in command_list:
         # Item should be a map with one entry
+        SLOG.debug("dispatch_commands", item=item)
         assert isinstance(item, MutableMapping), 'item in list isn\'t a dict'
         assert len(item.keys()) == 1, 'item has more than one entry'
         for target, command in item.items():

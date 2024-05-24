@@ -13,13 +13,13 @@ WITH_HT="${2:-false}"
 sudo yum update -y -q
 # TIG-2391 TIG-2391 iptables conflicts with iproute-tc
 sudo yum remove -y iptables iptables-libs
-sudo yum -y -q install tmux git wget sysstat dstat perf fio xfsprogs krb5-libs openldap-devel cyrus-sasl cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-lib cyrus-sasl-md5 net-snmp net-snmp-devel net-snmp-libs net-snmp-utils python2-pip numactl iproute-tc
+sudo yum -y -q install tmux git wget sysstat dstat perf fio xfsprogs krb5-libs openldap-devel cyrus-sasl cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-lib cyrus-sasl-md5 net-snmp net-snmp-devel net-snmp-libs net-snmp-utils python3-pip numactl iproute-tc
 
 # Make sure we actually have pip
 if ! [ -x "$(command -v pip)" ]; then
     echo "pip not installed. Installing now"
     curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
-    python get-pip.py
+    python3 get-pip.py
 fi
 
 disable_hyperthreading() {
@@ -67,6 +67,8 @@ create_required_directories() {
     mkdir -p /data/tmp
     # Tests are designed to access things with relative paths, which on EC2 is relative to $HOME.
     ln -s /data ~/data
+    ln -s /media/ebs ~/disk1
+    ln -s /media/ebs2 ~/disk2
 }
 
 ##

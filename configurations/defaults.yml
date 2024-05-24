@@ -136,6 +136,7 @@ workload_setup:
     tpcc: ./tpcc
     genny: ./data/genny  # Put genny on the large drive to give it more space.
     benchmarks: ./benchmarks  # sysbench
+    tsbs: ./tsbs
 
 
 mongodb_setup:
@@ -380,6 +381,7 @@ cluster_setup:
     # The list of hosts that can be used in a driver's connection string
     hosts: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hosts}
     # A single host, as in "host:port". Use the primary or first proxy / entry point
+    host: ${cluster_setup.meta.hostname}:${cluster_setup.meta.port}
     hostname: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hostname}
     connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
     port: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.port}
@@ -462,19 +464,19 @@ cluster_setup:
       files:
         lock: ${cluster_setup.directories.data_dir}/${cluster_setup.launch_program.0}.lock
       directories:
-        extract_dir: crate
-        bin_dir: crate/bin
-        log_dir: logs
-        data_dir: data
-        config_dir: crate/config
-        journal: /media/ebs2/journal
+        extract_dir: data/crate
+        bin_dir: data/crate/bin
+        log_dir: data/crate/logs
+        data_dir: data/crate/data
+        config_dir: data/crate/config
+        journal: null
 
       node_config_file:
-        remote_path: crate/config/crate.yml
+        remote_path: data/crate/config/crate.yml
         content: |
           path:
-            data: data
-            logs: logs
+            data: data/crate/data
+            logs: data/crate/logs
           network:
             host: _site_
           auth:
@@ -514,18 +516,18 @@ cluster_setup:
 
                   [Service]
                   Type=simple
-                  User=ec2-user
-                  Group=ec2-user
-                  WorkingDirectory=/home/ec2-user/crate
+                  User=${infrastructure_provisioning.tfvars.ssh_user}
+                  Group=${infrastructure_provisioning.tfvars.ssh_user}
+                  WorkingDirectory=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate
                   Environment="CRATE_HEAP_SIZE=15829303296"
-                  Environment="CRATE_HOME=/home/ec2-user/crate"
-                  Environment="CRATE_PATH_CONF=/home/ec2-user/crate"
-                  Environment="CRATE_PATH_LOG=/home/ec2-user/logs"
-                  Environment="CRATE_GC_LOG_DIR=/home/ec2-user/logs"
-                  Environment="CRATE_HEAP_DUMP_PATH=/var/lib/crate"
-                  ExecStart=/home/ec2-user/crate/bin/crate \
-                      -Cpath.conf=/home/ec2-user/crate/config/ \
-                      -Cpath.logs=/home/ec2-user/logs/
+                  Environment="CRATE_HOME=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate"
+                  Environment="CRATE_PATH_CONF=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate"
+                  Environment="CRATE_PATH_LOG=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
+                  Environment="CRATE_GC_LOG_DIR=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
+                  Environment="CRATE_HEAP_DUMP_PATH=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
+                  ExecStart=/home/${infrastructure_provisioning.tfvars.ssh_user}/crate/bin/crate \
+                      -Cpath.conf=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/config/ \
+                      -Cpath.logs=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs/
                   StandardOutput=journal
                   StandardError=journal
                   TimeoutStopSec=300
@@ -666,6 +668,7 @@ test_control:
     tpcc: results.log
     genny: genny-perf.json
     sysbench: test_output.log
+    tsbs: test_output.log
 
   # As I'm writing this, the basename IS the name. PERF-1096 will add a unique component.
   reports_dir_basename: reports
