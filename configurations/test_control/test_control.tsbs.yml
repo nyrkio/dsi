@@ -1,0 +1,97 @@
+task_name: tsbs.devops
+
+timeouts:
+  no_output_ms: 15000000
+
+run:
+  # - id: tsbs_load_1
+  #   type: tsbs
+  #   cmd: |
+  #     ./tsbs/bin/tsbs_generate_data --use-case="devops" --seed=12345 --scale=4000     --timestamp-start="2016-01-01T00:00:00Z"   --timestamp-end="2016-01-04T00:00:00Z"     --log-interval="10s" --format="${cluster_setup.meta.product_name}"   | \
+  #     ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+
+  - id: tsbs_load_hack
+    type: tsbs_load_hack
+    cmd: echo "We're done. Loading was intentionally done in pre_test."
+    output_files:
+      - tsbs_load_hack_pretest.log
+    pre_test:
+      - on_mongod:
+          exec: |
+              cat ./data/${cluster_setup.meta.product_name}-data.gz | gunzip | ./tsbs/bin/tsbs_load_${cluster_setup.meta.product_name} --batch-size=10000 --do-create-db --hosts=md --user=username --pass=password --seed=12345 --shards=30 --workers=30 | tee tsbs_load_hack_pretest.log
+
+  - id: tsbs_single-groupby-1-1-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-1-1-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+  - id: tsbs_single-groupby-1-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-1-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+  - id: tsbs_single-groupby-1-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-1-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+  - id: tsbs_single-groupby-5-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-5-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+  - id: tsbs_single-groupby-5-1-2
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-5-1-2-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+  - id: tsbs_single-groupby-5-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-single-groupby-5-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+
+  - id: tsbs_double-groupby-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-double-groupby-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+  - id: tsbs_double-groupby-5
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-double-groupby-5-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+  - id: tsbs_double-groupby-all
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+  - id: tsbs_groupby-orderby-limit
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/${cluster_setup.meta.product_name}-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
+
+
+between_tests:
+  - restart_cluster:
+      clean_logs: true
+      clean_db_dir: false
+

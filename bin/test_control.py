@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 
+import datetime
 import glob
 import logging
 import os
@@ -400,6 +401,12 @@ def run_tests(config):
                 break
             else:
                 LOG.info("Successful test run for test %s. Parsing results now", test['id'])
+
+            LOG.info("Test started at (seconds): %s", timer['start'])
+            LOG.info("Test ended at (seconds): %s", timer['end'])
+            LOG.info("Test runtime (seconds): %s", timer['end'] - timer['start'])
+            LOG.info("Test runtime: %s",
+                     datetime.timedelta(seconds=(timer['end'] - timer['start'])))
             parse_test_results(test, config, timer)
     except Exception as e:  # pylint: disable=broad-except
         LOG.error('Unexpected exception: %s', repr(e), exc_info=1)

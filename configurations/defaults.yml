@@ -669,6 +669,7 @@ test_control:
     genny: genny-perf.json
     sysbench: test_output.log
     tsbs: test_output.log
+    tsbs_load_hack: tsbs_load_hack_pretest.log
 
   # As I'm writing this, the basename IS the name. PERF-1096 will add a unique component.
   reports_dir_basename: reports

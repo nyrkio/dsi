@@ -19,9 +19,11 @@ import sys
 
 import structlog
 
+from test_control import copy_to_reports, print_perf_json
 from libanalysis.results import ResultsFile
 from common.log import setup_logging
 from common.config import ConfigDict
+from common.workload_output_parser import parse_test_results, get_supported_parser_types
 
 LOG = structlog.get_logger(__name__)
 
@@ -74,6 +76,16 @@ def main(argv):
 
     config = ConfigDict('analysis')
     config.load()
+
+    for test in config['test_control']['run']:
+        if not test['type'] in get_supported_parser_types():
+            raise NotImplementedError("No parser exists for test type {}".format(test['type']))
+        parse_test_results(test, config)
+
+    perf_json = config['test_control']['perf_json']['path']
+    copy_to_reports(reports_dir='reports', perf_json=perf_json)
+    # Print perf.json to screen
+    print_perf_json(filename=perf_json)
 
     analyzer = ResultsAnalyzer(config)
     analyzer.analyze_all()

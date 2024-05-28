@@ -86,6 +86,11 @@ class WorkloadOutputParserTestCase(unittest.TestCase):
                 'meta': {
                     'is_atlas': False
                 }
+            },
+            'cluster_setup': {
+                'meta': {
+                    'product_name': 'wiredTiger'
+                }
             }
         } # yapf: disable
         self.timer = {'start': 1.001, 'end': 2.002}

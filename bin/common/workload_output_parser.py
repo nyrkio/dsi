@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 
 
 @nottest
-def parse_test_results(test, config, timer):
+def parse_test_results(test, config, timer=None):
     """
     Based on test['type'], instantiate the correct parser and parse test output into perf.json.
 
@@ -26,7 +26,7 @@ def parse_test_results(test, config, timer):
     :returns: bool True on success else False
     """
 
-    if test['type'] not in PARSERS:
+    if test['type'] not in get_supported_parser_types():
         raise ValueError("parser_factory: Unsupported test type: {}".format(test['type']))
     parser_cls = PARSERS[test['type']]  # pylint: disable=invalid-name
     return parser_cls(test, config, timer).parse_and_save()
@@ -110,6 +110,7 @@ class Results(object):
                 }
             } # yapf: disable
             self.results.append(new_entry)
+            LOG.debug(new_entry)
 
     def _find_existing_result(self, name):
         """
@@ -150,8 +151,12 @@ class ResultParser(object):
         self.test_type = test['type']
         self.task_name = config['test_control']['task_name']
         self.reports_root = config['test_control']['reports_dir_basename']
-        self.results = Results(config['test_control']['perf_json']['path'],
-                               config['mongodb_setup']['mongod_config_file']['storage']['engine'])
+
+        storage_engine = config['cluster_setup']['meta']['product_name']
+        if config['cluster_setup']['meta']['product_name'] == "mongodb":
+            storage_engine += config['mongodb_setup']['mongod_config_file']['storage']['engine']
+
+        self.results = Results(config['test_control']['perf_json']['path'], storage_engine)
         self.timer = timer
         self.input_log = None
 
@@ -163,6 +168,7 @@ class ResultParser(object):
         LOG.debug("Trying to read %s", self.input_log)
         with open(self.input_log) as file_handle:
             for line in file_handle:
+                self._parse_timer(line)
                 yield line
 
     def parse_and_save(self):
@@ -207,6 +213,22 @@ class ResultParser(object):
         then call `self.add_result(name, result, threads)` for each result.
         """
         raise NotImplementedError()
+
+    def _parse_timer(self, line):
+        start_line_begin = "Test started at (seconds):"
+        end_line_begin = "Test ended at (seconds):"
+        if self.timer is None:
+            self.timer = {'start': None, 'end': None}
+
+        if not self.timer['start']:
+            if line.startswith(start_line_begin):
+                self.timer['start'] = float(line[start_line_begin:])
+                LOG.debug("Found start time")
+
+        if not self.timer['end']:
+            if line.startswith(end_line_begin):
+                self.timer['end'] = float(line[end_line_begin:])
+                LOG.debug("Found end time")
 
 
 class InvalidConfigurationException(ValueError):
@@ -430,21 +452,6 @@ class SysbenchResultParser(ResultParser):
                             str(self.threads))
 
 
-class TsbsResultParser(ResultParser):
-    """A ResultParser for TimeSeries Benchmark Suite"""
-    def __init__(self, test, config, timer):
-        """Set sysbench specific attributes"""
-        super(TsbsResultParser, self).__init__(test, config, timer)
-        input_file = config['test_control']['output_file']['tsbs']
-        self.input_log = os.path.join(self.reports_root, test['id'], input_file)
-        self.threads = None  # We postpone this to _parse()
-
-    def _parse(self):
-        """
-        """
-        pass
-
-
 class FioParser(ResultParser):
     """A ResultParser of fio results in fio.json"""
     def __init__(self, test, config, timer):
@@ -534,6 +541,166 @@ class IperfParser(ResultParser):
         self.add_result("NetworkBandwidth", result)
 
 
+class GenericResultParser(ResultParser):
+    """ResultParser to end all result parsers? Use configuration to express where to find results"""
+    def __init__(self, test, config, timer):
+        """Get config parameters"""
+        super(GenericResultParser, self).__init__(test, config, timer)
+        self.input_log = os.path.join(self.reports_root, test['id'],
+                                      config['test_control']['output_file'][self.test_type])
+        self.threads = None  # We postpone this to _parse()
+
+        self.patterns = config["analysis"]["generic_parser"]["patterns"][self.test_type]
+        LOG.debug(self.test_id)
+        LOG.debug(self.test_type)
+        LOG.debug(self.input_log)
+        LOG.debug(self.patterns)
+
+    # pylint: disable=too-many-nested-blocks
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-locals
+    def _parse(self):
+        """
+        Parse results
+
+        pattern may define keys:
+
+        options_start: ***
+        options_end: ***
+        options:
+            key1:
+                line_begin: ***
+                begin_marker: ***
+                end_marker: " "
+        results_start: ****
+        results_end: ****
+        results:
+            metric1:
+                line_begin: ***
+                begin_marker: ***
+                end_marker: " "
+
+        """
+        options_start = self.patterns.get("options_start", [])
+        read_options = not options_start
+        if not isinstance(options_start, list):
+            options_start = [] if options_start is None else [options_start]
+        options_end = self.patterns.get("options_end", [])
+        if not isinstance(options_end, list):
+            options_end = [] if options_end is None else [options_end]
+
+        results_start = self.patterns.get("results_start", [])
+        read_results = not results_start
+        if not isinstance(results_start, list):
+            results_start = [] if results_start is None else [results_start]
+        results_end = self.patterns.get("results_end", [])
+        if not isinstance(results_end, list):
+            results_end = [] if results_end is None else [results_end]
+
+        LOG.debug(options_start)
+        LOG.debug(options_end)
+        for option_name, pattern in self.patterns.get("options", {}).items():
+            read_options = not options_start
+            options_start_lines_found = 0
+            options_end_lines_found = 0
+            for line in self.load_input_log():
+                if not read_options and options_start and options_start[
+                        options_start_lines_found] in line:
+                    options_start_lines_found += 1
+                    if len(options_start) > options_start_lines_found:
+                        pass
+                    elif len(options_start) == options_start_lines_found:
+                        read_options = True
+                        LOG.debug("read_options True")
+                        options_end_lines_found = 0
+                    elif len(options_start) < options_start_lines_found:
+                        assert False, "not possible"
+
+                elif read_options and options_end and options_end[options_end_lines_found] in line:
+                    options_end_lines_found += 1
+                    if len(options_end) > options_end_lines_found:
+                        pass
+                    elif len(options_end) == options_end_lines_found:
+                        read_options = False
+                        LOG.debug("read_options False")
+                        options_start_lines_found = 0
+                    elif len(options_end) < options_end_lines_found:
+                        assert False, "not possible"
+
+                if read_options:
+                    line_begin = pattern.get("line_begin")
+                    if line_begin is None or line.startswith(line_begin):
+                        begin_marker = pattern.get("begin_marker", line_begin)
+                        assert begin_marker is not None
+                        end_marker = pattern["end_marker"] if "end_marker" in pattern else None
+
+                        parts = line.rstrip().split(begin_marker)
+                        if len(parts) > 1:
+                            parts2 = parts[1].split(end_marker) if end_marker else [parts[1]]
+                            if len(parts2) > 1:
+                                value = parts2[0]
+                                if option_name == "threads":
+                                    self.threads = value
+                                else:
+                                    LOG.info("Unused option: %s=%s", option_name, value)
+
+        LOG.debug(results_start)
+        LOG.debug(results_end)
+        for metric_name, pattern in self.patterns.get("results", {}).items():
+            read_results = not results_start
+            results_start_lines_found = 0
+            results_end_lines_found = 0
+            for line in self.load_input_log():
+                if not read_results and results_start and results_start[
+                        results_start_lines_found] in line:
+                    print(line[:-1])
+                    results_start_lines_found += 1
+                    if len(results_start) > results_start_lines_found:
+                        pass
+                    elif len(results_start) == results_start_lines_found:
+                        read_results = True
+                        LOG.debug(
+                            "read_results TRUE .................................................")
+                        results_end_lines_found = 0
+                    elif len(results_start) < results_start_lines_found:
+                        assert False, "not possible"
+
+                elif read_results and results_end and results_end[results_end_lines_found] in line:
+                    results_end_lines_found += 1
+                    if len(results_end) > results_end_lines_found:
+                        pass
+                    elif len(results_end) == results_end_lines_found:
+                        read_results = False
+                        LOG.debug(
+                            "read_results FALSE..................................................")
+                        results_start_lines_found = 0
+                    elif len(results_end) < results_end_lines_found:
+                        assert False, "not possible"
+
+                if read_results:
+                    line_begin = pattern.get("line_begin")
+
+                    if line_begin is None or line.startswith(line_begin):
+                        begin_marker = pattern.get("begin_marker", line_begin)
+                        assert begin_marker is not None
+                        end_marker = pattern["end_marker"] if "end_marker" in pattern else None
+                        parts = line.rstrip().split(begin_marker)
+                        if len(parts) > 1:
+                            parts2 = parts[1].split(end_marker) if end_marker else [parts[1]]
+                            if len(parts2) > 1:
+                                value = parts2[0]
+                                print(line)
+                                self.add_result(self.test_id, float(value), str(self.threads),
+                                                metric_name)
+
+            #
+            # LOG.debug("read_options=%s options_start_lines_found=%s options_end_lines_found=%s",
+            #             read_options, options_start_lines_found, options_end_lines_found)
+            # LOG.debug("read_results=%s results_start_lines_found=%s results_end_lines_found=%s",
+            #            read_results, results_start_lines_found, results_end_lines_found)
+
+
 # Map test['type'] to a ResultParser class.
 PARSERS = {
     'mongoshell': MongoShellParser,
@@ -546,7 +713,8 @@ PARSERS = {
     'tpcc': TPCCResultParser,
     'genny': GennyResultsParser,
     'sysbench': SysbenchResultParser,
-    'tsbs': TsbsResultParser
+    'tsbs': GenericResultParser,
+    'tsbs_load_hack': GenericResultParser
 }
 
 
