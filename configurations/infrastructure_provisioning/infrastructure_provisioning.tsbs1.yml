@@ -1,0 +1,27 @@
+
+use_placement_group: true
+tfvars:
+  # Contents of this is transformed into input JSON to override terraform default values
+  # Note that all tfvars values have defaults, and are therefore optional
+  cluster_name: tsbs1
+
+  # I need to use one of these for the huge TSBS file. Then load that into the other node.
+  mongod_ebs_instance_count: 2
+  mongod_ebs_size: 4096
+  mongod_ebs_iops: 64000
+  mongod_ebs_instance_type: c7i.4xlarge
+  workload_instance_type: c7i.4xlarge
+  workload_instance_count: 1
+
+  tags:
+    project: tsbs-comparison
+
+# Meta-data about this instance type. Can be used for example to parameterize later configuration
+# so that it is based on number of cpu's or memory.
+meta:
+  nodes_in_cluster: 1  # Counting mongod instance, not wc
+  cpu_per_host: 8  # Note: we turn off hyperthreading
+  cpu_total_cluster: 8
+  memory_per_cpu_gb: 4
+  memory_per_host_gb: 64
+  memory_total_cluster: 196

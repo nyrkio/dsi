@@ -17,7 +17,7 @@ infrastructure_provisioning:
     method: /etc/hosts
     domain: dsitest.dev
 
-  use_placement_group: false
+  use_placement_group: true
 
   # Terraform variables
   tfvars:
@@ -444,6 +444,8 @@ cluster_setup:
     cratedb:
       tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
 
+      # https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.7.1.tar.gz
+
       numactl: false
 
       launch_program:
@@ -458,8 +460,8 @@ cluster_setup:
       client_command_file: ./crash --format dynamic --hosts {connection_string} --command "\r {command_file}"
       # It seems I can only make crate listen on external address or localhost, but not both
       # Hence using $(hostname) as a crutch for localhost
-      client_command_local: ./crash --format dynamic --hosts $(hostname):4200 --command "{}"
-      client_command_local_file: ./crash --format dynamic --hosts $(hostname):4200 --command "\r {}"
+      client_command_local: ./crash --format dynamic --hosts localhost:4200 --command "{}"
+      client_command_local_file: ./crash --format dynamic --hosts localhost:4200 --command "\r {}"
       check_node_up: SELECT attributes, cluster_state_version, connections,version FROM sys.nodes;
       files:
         lock: ${cluster_setup.directories.data_dir}/${cluster_setup.launch_program.0}.lock
@@ -479,6 +481,19 @@ cluster_setup:
             logs: data/crate/logs
           network:
             host: _site_
+          # To allow authenticated access to CrateDB from specific hosts, you must
+          # enable the host based authentication setting.
+          # The default value is `false`.
+          auth.host_based.enabled: true
+
+          # Client access and authentication is then configured via the host based
+          # config, a map of remote client access entries.
+          # The following example is a sane configuration that covers a common use case:
+          # * The predefined superuser `crate` has trusted access from localhost.
+          # * All other users require username/password authentication from anywhere.
+          #   Note that this authentication method is only available via Postgres
+          #   Protocol, meaning that with this configuration, connecting from non-local
+          #   hosts via HTTP would not be possible!
           auth:
             host_based:
               config:
@@ -488,7 +503,6 @@ cluster_setup:
                   method: trust
                 99:
                   method: password
-
 
       meta:
         hosts: ${cluster_setup.topology.0.node.0.private_ip}:${cluster_setup.meta.port}
@@ -525,7 +539,7 @@ cluster_setup:
                   Environment="CRATE_PATH_LOG=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
                   Environment="CRATE_GC_LOG_DIR=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
                   Environment="CRATE_HEAP_DUMP_PATH=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs"
-                  ExecStart=/home/${infrastructure_provisioning.tfvars.ssh_user}/crate/bin/crate \
+                  ExecStart=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/bin/crate \
                       -Cpath.conf=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/config/ \
                       -Cpath.logs=/home/${infrastructure_provisioning.tfvars.ssh_user}/data/crate/logs/
                   StandardOutput=journal
@@ -570,8 +584,8 @@ cluster_setup:
       post_test:
         - on_workload_client:
             exec: |
-              ./crash --format dynamic --hosts md:4200 --command "SELECT * FROM sys.jobs_metrics LIMIT 100;"> ./sys.jobs_metrics.out
-              ./crash --format dynamic --hosts md:4200 --command "SELECT stmt, SUM(ended-started) as sum_t, COUNT(stmt) as num_t, MAX(ended-started) as max_t, AVG(ended-started) as avg_t, MIN(ended-started) as min_t FROM sys.jobs_log GROUP BY stmt ORDER BY sum_t DESC LIMIT 100;" > ./sys.jobs_log.aggregated.out
+              ./crash --format dynamic --hosts ${cluster_setup.meta.hostname}:4200 --command "SELECT * FROM sys.jobs_metrics LIMIT 100;"> ./sys.jobs_metrics.out
+              ./crash --format dynamic --hosts ${cluster_setup.meta.hostname} --command "SELECT stmt, SUM(ended-started) as sum_t, COUNT(stmt) as num_t, MAX(ended-started) as max_t, AVG(ended-started) as avg_t, MIN(ended-started) as min_t FROM sys.jobs_log GROUP BY stmt ORDER BY sum_t DESC LIMIT 100;" > ./sys.jobs_log.aggregated.out
               # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.jobs_log;" |gzip> ./sys.jobs_log.out.gz
               # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.operations_log;" |gzip> ./sys.operations_log.out.gz
 
@@ -1023,3 +1037,6 @@ test_control:
       }
       throw err;
     })();
+
+analysis:
+  recompute_perf_json: false

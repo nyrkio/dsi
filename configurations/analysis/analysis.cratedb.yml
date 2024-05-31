@@ -1,7 +1,8 @@
+# Corresponds to python modules available in libanalysis/__init__.py.
 checks:
   - exit
   - core
-  # - ycsb_throughput
+
   - compare_reports
 
 results_json:
@@ -11,4 +12,119 @@ results_json:
   # This should be the typical case.
   mode: 'overwrite'
 
-rules: {}
+generic_parser:
+  patterns:
+    tsbs_load_hack:
+      options_start: "Summary:"
+      options_end:
+      options:
+        threads:
+          begin_marker: "with "
+          end_marker: " workers"
+
+      results_start: "Summary:"
+      results_end:
+      results:
+        metrics_per_sec:
+          begin_marker: "(mean rate "
+          end_marker: " metrics/sec)"
+        rows_per_sec:
+          begin_marker: "(mean rate "
+          end_marker: " rows/sec)"
+
+    tsbs:
+      options:
+        threads:
+          begin_marker: "with "
+          end_marker: " workers"
+        iterations:
+          line_begin: "Run complete after "
+          end_marker: " queries with "
+      results_start:
+        - "Run complete after"
+      results_end: "wall clock time "
+      results:
+        query_rate_qps:
+          line_begin: "Run complete after "
+          begin_marker: "Overall query rate "
+          end_marker: " queries/sec)"
+        wall_clock_time:
+          line_begin: "wall clock time: "
+        min_ms:
+          line_begin: "min:"
+          begin_marker: "min:  "
+          end_marker: "ms,"
+        median_ms:
+          line_begin: "min:"
+          begin_marker: "med:  "
+          end_marker: "ms,"
+        mean_ms:
+          line_begin: "min:"
+          begin_marker: "mean:  "
+          end_marker: "ms,"
+        max_ms:
+          line_begin: "min:"
+          begin_marker: "max:  "
+          end_marker: "ms,"
+
+# Siri, what is a lift and shift migration?
+#
+# Below configs are the same that used to be python constants in DSI 1.0 analysis.
+# I just extracted them here but didn't change structure for now. As follow-up work, variant
+# specific configs should move to their mongodb_setup.yml files and picked up from there.
+rules:
+  constants:
+    replica-2node:
+      # from Judah: initial sync uses 16 threads to put data into the database
+      max_thread_level: 32.0
+
+  resource_rules_ftdc_file:
+    # Disabled for PERF-1084. To be re-enabled after BF-5815 is resolved
+    # default:
+    #   - ftdc_replica_lag_check
+    default: []
+    replica-2node: []
+
+  # rules run for every variant
+  common:
+    - below_configured_cache_size
+    - below_configured_oplog_size
+
+  resource_rules_ftdc_chunk:
+    default:
+      - below_configured_cache_size
+      - below_configured_oplog_size
+      - max_connections  # rule not run for 3-shard or shard-lite
+      - repl_member_state  # rule not run for initialsync
+    single-replica-fle:
+      - below_configured_cache_size
+      - below_configured_oplog_size
+      - repl_member_state
+    shard:
+      - below_configured_cache_size
+      - below_configured_oplog_size
+      - repl_member_state
+    shard-lite:
+      - below_configured_cache_size
+      - below_configured_oplog_size
+      - repl_member_state
+    replica-2-node:
+      - below_configured_cache_size
+      - below_configured_oplog_size
+      - max_connections
+
+  bad_log_types: ["F", "E"]  # See https://docs.mongodb.com/manual/reference/log-messages/
+  bad_messages:
+    - starting an election
+    - election succeeded
+    - transition to primary
+    - posix_fallocate failed
+  # As discussed, new rules are subject to a quarantine period irrespective of project/variant/etc.
+  # The report.json `test_file` regex value of these checks are listed here; will not increment the
+  # number of failures in the report for tests specified in this variable.
+  quarantined_rules:
+    - mongod\.log\.([0-9])+
+    - resource_sanity_checks
+    - ycsb-throughput-analysis
+    - db-hash-check
+    - validate-indexes-and-collections

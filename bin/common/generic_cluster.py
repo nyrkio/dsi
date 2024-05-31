@@ -265,6 +265,7 @@ class ClusterNode(GenericCluster):
         config_contents = self.node_config_file['content']
         if not isinstance(config_contents, str):
             config_contents = yaml.dump(config_contents, default_flow_style=False)
+        LOG.info("remote_file_name=%s", remote_file_name)
         self.host.create_file(remote_file_name, config_contents)
         self.host.run(['cat', remote_file_name])
 

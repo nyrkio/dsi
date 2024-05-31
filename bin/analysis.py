@@ -77,15 +77,16 @@ def main(argv):
     config = ConfigDict('analysis')
     config.load()
 
-    for test in config['test_control']['run']:
-        if not test['type'] in get_supported_parser_types():
-            raise NotImplementedError("No parser exists for test type {}".format(test['type']))
-        parse_test_results(test, config)
+    if config['analysis']['recompute_perf_json']:
+        for test in config['test_control']['run']:
+            if not test['type'] in get_supported_parser_types():
+                raise NotImplementedError("No parser exists for test type {}".format(test['type']))
+            parse_test_results(test, config)
 
-    perf_json = config['test_control']['perf_json']['path']
-    copy_to_reports(reports_dir='reports', perf_json=perf_json)
-    # Print perf.json to screen
-    print_perf_json(filename=perf_json)
+        perf_json = config['test_control']['perf_json']['path']
+        copy_to_reports(reports_dir='reports', perf_json=perf_json)
+        # Print perf.json to screen
+        print_perf_json(filename=perf_json)
 
     analyzer = ResultsAnalyzer(config)
     analyzer.analyze_all()

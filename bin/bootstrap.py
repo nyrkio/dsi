@@ -46,6 +46,10 @@ def parse_command_line(config, args=None):
                         default='.',
                         help="Directory to setup. Defaults to current directory")
     parser.add_argument('--log-file', help='path to log file')
+    parser.add_argument('--copy',
+                        action='store_true',
+                        default=False,
+                        help='Copy over the yaml files as listed in ./bootstrap.yml.')
 
     # These options are ignored but allowed for backward compatibility
     parser.add_argument('--production', action='store_true', default=False, help='(Ignored)')
@@ -64,6 +68,8 @@ def parse_command_line(config, args=None):
         config['bootstrap_file'] = args.bootstrap_file
     if args.directory:
         config['directory'] = args.directory
+    if args.copy:
+        config['copy'] = args.copy
     if args.list:
         config['list'] = args.list
     return config
@@ -277,7 +283,10 @@ def load_bootstrap(config, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    if 'bootstrap_file' in config:
+    if 'copy' in config:
+        LOGGER.info("--copy will use ./bootstrap.yml and copy into current work directory.")
+
+    elif 'bootstrap_file' in config:
         bootstrap_path = os.path.abspath(os.path.expanduser(config['bootstrap_file']))
         if os.path.isfile(bootstrap_path):
             if not bootstrap_path == os.path.abspath(os.path.join(directory, 'bootstrap.yml')):
@@ -344,7 +353,7 @@ def run_bootstrap(config):
     directory = os.path.abspath(os.path.expanduser(config['directory']))
     LOGGER.info('Creating work directory', directory=directory)
 
-    if os.path.exists(os.path.join(directory, 'dsienv.sh')):
+    if os.path.exists(os.path.join(directory, 'dsienv.sh')) and not config['copy']:
         print("It looks like you have already setup "
               "{0} for dsi. dsienv.sh exists. Stopping".format(directory))
         sys.exit(1)

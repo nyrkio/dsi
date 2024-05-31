@@ -2,3 +2,11 @@
 meta:
   product_name: cratedb
 
+  hosts: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.hosts}
+  host: ${cluster_setup.meta.hostname}:${cluster_setup.meta.port}
+  hostname: md1
+  connection_string: md1:5432
+
+
+tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.7.1.tar.gz
+
