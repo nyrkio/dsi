@@ -262,9 +262,9 @@ tsbs:
 
           ./bin/tsbs_load config --target=${cluster_setup.meta.product_name} --data-source=FILE
 
-  - on_mongod:
-      exec: |
-          cat ./data/${cluster_setup.meta.product_name}-data.gz | gunzip | ./tsbs/bin/tsbs_load_${cluster_setup.meta.product_name} --batch-size=10000 --do-create-db --hosts=md --user=username --pass=password --seed=12345 --shards=30 --workers=30
+  # - on_mongod:
+  #     exec: |
+  #         cat ./data/${cluster_setup.meta.product_name}-data.gz | gunzip | ./tsbs/bin/tsbs_load_${cluster_setup.meta.product_name} --batch-size=10000 --do-create-db --hosts=md --user=username --pass=password --seed=12345 --shards=30 --workers=30
 
   - on_workload_client:
       upload_files:
