@@ -63,6 +63,9 @@ def compare_reports(config, results):
         except FileNotFoundError as e:
             LOGGER.debug(str(type(e)) + " " + str(e))
             continue
+        except json.decoder.JSONDecodeError:
+            LOGGER.warn("Couldn't open the perf.json file.", file_name=perf_json)
+            return
 
         test_control = os.path.join(result_dir, "test_control.yml")
         try:
@@ -71,6 +74,9 @@ def compare_reports(config, results):
                 result_data[result_dir]["test_control"] = tc
         except FileNotFoundError as e:
             LOGGER.warning(str(type(e)) + " " + str(e))
+        except json.decoder.JSONDecodeError:
+            LOGGER.warn("Couldn't open the perf.json file.", file_name=perf_json)
+            return
 
         task = config["test_control"]["task_name"] + "_" + day_minute
         tasks.append(task)
