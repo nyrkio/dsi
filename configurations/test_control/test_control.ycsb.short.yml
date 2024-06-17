@@ -35,13 +35,13 @@ pre_task:
   - on_workload_client:
       upload_files:
         - target: db.properties
-          content: |
-              db.driver=org.postgresql.Driver
-              db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
-              db.user=username
-              db.passwd=password
+          content: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.dbproperties}
   - on_workload_client:
       exec_client_shell:
         connection_string: ${cluster_setup.product.${cluster_setup.meta.product_name}.meta.connection_string}
         script: ${test_control.product.${cluster_setup.meta.product_name}.ycsb.create_table_script}
 
+between_tests:
+  - restart_cluster:
+      clean_logs: true
+      clean_db_dir: false
