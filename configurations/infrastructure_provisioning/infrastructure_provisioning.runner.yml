@@ -1,0 +1,33 @@
+# This config file will deploy a single workload client host and no mongod nodes.
+# I sometimes use this as the "launch" or "mission control" host from where DSI runs.
+# This way I can use screen and all tests continue to run even if I disconnect my laptop.
+
+# Unset default. Since Atlas uses all CPUs, we want to do the same on the workload client.
+numactl_prefix: ""
+
+tfvars:
+  cluster_name: workload_client
+
+  mongod_instance_count: 0
+  mongod_ebs_instance_count: 0
+
+  workload_instance_count: 1
+  workload_instance_type: m6i.xlarge
+
+  # Don't disable hyperthreading. (We disable HT cpus by default if this isn't here.)
+  with_hyperthreading: "yes"
+
+  # Atlas Cloud Dev has the most capacity in that region and US-EAST-1 and US-WEST-1.
+  # We kept getting InsufficientInstanceCapacity for us-west-1, so changed back to east.
+  region: us-east-1
+  availability_zone: us-east-1a
+
+# Meta-data about this instance type. Can be used for example to parameterize later configuration
+# so that it is based on number of cpu's or memory.
+meta:
+  nodes_in_cluster: 0  # Counting mongod instance, not wc
+  cpu_per_host: 0  # Note: we turn off hyperthreading
+  cpu_total_cluster: 0
+  memory_per_cpu_gb: 0
+  memory_per_host_gb: 0
+  memory_total_cluster: 0
