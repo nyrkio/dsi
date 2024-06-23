@@ -24,14 +24,14 @@
 
 set_defaults () { load_results="tsbs_load_hack/mongod.0/tsbs_load_hack_pretest.log"; results="test_output.log"; skip=4; limit=1;}
 
-all_load () { for name in $(ls */reports-*/"$load_results"| cut -d / -f 1|sort|uniq); do echo $name; for name2 in $(ls $name/reports-*/$load_results | cut -d / -f 2 |sort|uniq); do echo $name2; tail -n 6 $name/$name2/"$load_results";    done; done }
+all_load () { for name in $(ls */reports-*/$load_results| cut -d / -f 1|sort|uniq); do echo $name; for name2 in $(ls $name/reports-*/$load_results | cut -d / -f 2 |sort|uniq); do echo $name2; tail -n 6 $name/$name2/$load_results;    done; done }
 
 
 
-all_query () { for name in $(ls */reports-*/*/"$results" | cut -d / -f 1|sort|uniq); do echo ... $name ...; for name2 in $(ls $name/reports-*/*/"$results" | cut -d / -f 2|sort|uniq); do echo $name2; for name3 in $(ls $name/$name2/*/"$results" | cut -d / -f 3|sort|uniq); do echo $name3; tail -n $skip $name/$name2/$name3/"$results"|head -n $limit;    done; done done ;}
+all_query () { for name in $(ls */reports-*/*/$results | cut -d / -f 1|sort|uniq); do echo ... $name ...; for name2 in $(ls $name/reports-*/*/$results | cut -d / -f 2|sort|uniq); do echo $name2; for name3 in $(ls $name/$name2/*/$results | cut -d / -f 3|sort|uniq); do echo $name3; tail -n $skip $name/$name2/$name3/$results|head -n $limit;    done; done done ;}
 
 
-all_pivot () { for name3 in $(ls */reports-*/*/"$results" | cut -d / -f 3|sort|uniq); do echo ... $name3 ...; for name2 in $(ls */reports-*/$name3/"$results" | cut -d / -f 2|sort|uniq); do for name in $(ls */$name2/*/"$results" | cut -d / -f 1|sort|uniq); do echo "                                                                                                                                  $name $name2" ; tail -n $skip $name/$name2/$name3/"$results" |head -n $limit;    done; done done ;}
+all_pivot () { for name3 in $(ls */reports-*/*/$results | cut -d / -f 3|sort|uniq); do echo ... $name3 ...; for name2 in $(ls */reports-*/$name3/$results | cut -d / -f 2|sort|uniq); do for name in $(ls */$name2/*/$results | cut -d / -f 1|sort|uniq); do echo "                                                                                                                                  $name $name2" ; tail -n $skip $name/$name2/$name3/$results |head -n $limit;    done; done done ;}
 
 
 filter_load () { egrep 'rows/sec|tsbs-';}
@@ -39,6 +39,3 @@ filter_load () { egrep 'rows/sec|tsbs-';}
 
 
 
-all_load | filter_load
-skip=5 limit=2 all_query |egrep '\.\.\.|reports-|count\:\ 1000|tsbs_'
-skip=4 limit=1 all_pivot
