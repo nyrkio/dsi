@@ -3,20 +3,20 @@ tsbs_load_hack:
       exec: echo goto regular tsbs
 
 tsbs:
-  # - on_all_hosts:
-  #     exec: ${workload_setup.install_go}
-  # - on_localhost:
-  #     checkout_repos:
-  #       - source: git@github.com:benchANT/tsbs.git
-  #         target: ${workload_setup.local_repos.tsbs}
-  # - on_mongod:
-  #     upload_files:
-  #       - source: ${workload_setup.local_repos.tsbs}
-  #         target: ./tsbs
-  # - on_mongod:
-  #     exec: |
-  #         cd tsbs
-  #         make
+  - on_all_hosts:
+      exec: ${workload_setup.install_go}
+  - on_localhost:
+      checkout_repos:
+        - source: git@github.com:benchANT/tsbs.git
+          target: ${workload_setup.local_repos.tsbs}
+  - on_mongod:
+      upload_files:
+        - source: ${workload_setup.local_repos.tsbs}
+          target: ./tsbs
+  - on_mongod:
+      exec: |
+          cd tsbs
+          make
   - on_mongod:
       exec: |
         me=$(hostname)
