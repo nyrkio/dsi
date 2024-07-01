@@ -1,0 +1,25 @@
+infrastructure_provisioning: tsbs1
+workload_setup: tsbs1.mongodb
+mongodb_setup: tsbs1
+# For products other than mongodb, use cluster_setup
+# cluster_setup: cratedb.standalone
+test_control: tsbs.mongodb
+analysis: cratedb
+
+
+# The following will be copied into a file overrides.yml. This is a handy way to set any other
+# config option you want. The below values will override what is set in the other files.
+overrides:
+  infrastructure_provisioning:
+    tfvars:
+      # Personal information (REQUIRED)
+      # Specify the path to your SSH private key file for AWS, the name of the key in EC2, and your
+      # @10gen.com username. This is necessary to connect to your provisioned infrastructure. For a full
+      # description, see the Requirements section of docs/GettingStarted.md
+      ssh_key_file: ~/.ssh/hingo-dsikey  # SSH private keyfile to use with AWS (~/.ssh/USERNAME-dsikey if you're following the doc)
+      ssh_key_name: hingo-dsikey  # The Name of the Key, as known in EC2 (USERNAME-dsikey if you're following the doc)
+
+      tags:
+        owner: henrik.ingo  # Your email address
+        expire-on-delta: 128  # Set expire-on tag this many hours in the future. (Default is 2.)
+

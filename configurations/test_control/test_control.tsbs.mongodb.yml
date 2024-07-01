@@ -1,0 +1,108 @@
+task_name: tsbs.devops
+
+timeouts:
+  no_output_ms: 15000000
+
+run:
+  # - id: tsbs_load_1
+  #   type: tsbs
+  #   cmd: |
+  #     ./tsbs/bin/tsbs_generate_data --use-case="devops" --seed=12345 --scale=4000     --timestamp-start="2016-01-01T00:00:00Z"   --timestamp-end="2016-01-04T00:00:00Z"     --log-interval="10s" --format="mongo"   | \
+  #     ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30
+
+
+  # - id: tsbs_load_hack
+  #   type: tsbs_load_hack
+  #   cmd: echo "We're done. Loading was intentionally done in pre_test."
+  #   # output_files:
+  #   #   - ./mongod-0/tsbs_load_hack_pretest.log
+  #   pre_test:
+  #     - on_mongod:
+  #         exec: |
+  #           me=$(hostname)
+  #           if [ $me == "ip-10-2-0-200.us-west-2.compute.internal" ]
+  #           then
+  #             cat ./data/mongo-data.gz | gunzip | ./tsbs/bin/tsbs_load_mongo --batch-size=100 --do-create-db --url=mongodb://md1 --timeseries-collection=false --meta-field-index "tags" --seed=12345 --workers=30 | tee tsbs_load_hack_pretest.log
+  #           fi
+  #   post_test:
+  #     - on_mongod:
+  #         retrieve_files:
+  #           - source: ./tsbs_load_hack_pretest.log
+  #             target: ./tsbs_load_hack_pretest.log
+  #           - source: ./tsbs_load_official_results.json
+  #             target: ./tsbs_load_official_results.json
+
+
+  - id: tsbs_single-groupby-1-1-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-single-groupby-1-1-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+  - id: tsbs_single-groupby-1-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-single-groupby-1-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+  - id: tsbs_single-groupby-1-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/mongo-single-groupby-1-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+  - id: tsbs_single-groupby-5-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-single-groupby-5-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+  - id: tsbs_single-groupby-5-1-2
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-single-groupby-5-1-2-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+  - id: tsbs_single-groupby-5-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-single-groupby-5-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+
+  - id: tsbs_double-groupby-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-double-groupby-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+  - id: tsbs_double-groupby-5
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-double-groupby-5-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+  - id: tsbs_double-groupby-all
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+  - id: tsbs_groupby-orderby-limit
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/mongo-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_mongo --workers=30 --url=mongodb://md1
+
+
+between_tests:
+      - on_mongod:
+          exec: echo Skip restarts
+

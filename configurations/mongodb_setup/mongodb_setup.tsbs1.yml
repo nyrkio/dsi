@@ -1,0 +1,140 @@
+# Meta data about this cluster setup
+meta:
+  product_name: mongodb
+  # A single host, as in "host:port". Use the primary or first mongos
+  hostname: md1
+  # The list of hosts that can be used in a mongodb connection string
+  hosts: md1:27017
+  # This lets you easily append &replicaSet=foo or other url params
+  # but still keep the base url with authentication etc.
+  # This param in general shouldn't be overwritten.
+  # This should *not* have any query-string parts in it - downstream is expecting to be the first to add on a ?
+  mongodb_url_base: "mongodb://${mongodb_setup.authentication.url.${mongodb_setup.authentication.enabled}}${mongodb_setup.meta.hosts}/admin"
+  # Most clients will use this to connect to the cluster
+  mongodb_url: "${mongodb_setup.meta.mongodb_url_base}?ssl=false"
+  # We need to provide a separate variable for the shell, because the shell on 3.4 doesn't
+  # support connecting to multiple mongoses and therefore can't use mongodb_url.
+  mongodb_shell_url: "mongodb://${mongodb_setup.authentication.url.${mongodb_setup.authentication.enabled}}${mongodb_setup.meta.hostname}:27017/admin?ssl=false"
+  # Used in mongoshell workloads (https://github.com/10gen/workloads/blob/23b1c6dd3a8c087b6a2c949147a8aeaba1d1d271/run_workloads.py#L289-L296)
+  shell_ssl_options: []
+  connection_string: ${mongodb_setup.meta.mongodb_shell_url}
+  is_sharded: false
+  is_replset: false
+  is_fle: false
+  secondary: null
+  is_atlas: false
+  # Clients (e.g. test_control) should use this to pick up net.ssl settings. Since there are
+  # several of them, we just pull the entire net.ssl here.
+  net: ${mongodb_setup.mongod_config_file.net}
+  # Meta-data used to determine scale_factor for a cluster
+  storageEngine: ${mongodb_setup.mongod_config_file.storage.engine}
+  # Number of primaries in the cluster. For non-sharded this
+  # should be 1. For sharded will be the number of shards.
+  primaries: 1
+  secondaries: 0  # Secondaries per shard
+  jdbc:
+    connection_string: jdbc:mysql://${mongodb_setup.meta.hostname}:27017
+
+
+#tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
+#tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.7.1.tar.gz
+#mongodb_binary_archive: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2023-7.0.7.tgz
+
+mongo_dir: mongodb
+journal_dir: /media/ebs/data/journal
+clean_db_dir: true
+# Note: It's also allowed to upload your own binary. You can unset this by setting to the empty
+# string "" in mongodb_setup.yml or overrides.yml.
+# This URL is 4.2.2. We use the sys-perf build instead of official release to include the jstests/ directory that we copy in our compile task.
+# mongodb_binary_archive: https://s3.amazonaws.com/mciuploads/dsi/sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf/a0bbbff6ada159e19298d37946ac8dc4b497eadf/linux/mongodb-enterprise-sys_perf_4.2_a0bbbff6ada159e19298d37946ac8dc4b497eadf.tar.gz
+mongodb_binary_archive: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-amazon2023-7.0.11.tgz
+
+mongod_config_file:  # Note these defaults can be overridden by user, but not unset.
+  net:
+    port: 27017
+    bindIp: 0.0.0.0
+  processManagement:
+    fork: true
+  setParameter:
+    enableTestCommands: 1
+  storage:
+    dbPath: data/dbs
+    engine: wiredTiger
+  systemLog:
+    destination: file
+    path: data/logs/mongod.log
+
+authentication:
+  enabled: false
+  username: username
+  password: password
+  # Part to use in mongodb_url
+  url:
+    "True": "${mongodb_setup.authentication.username}:${mongodb_setup.authentication.password}@"
+    "False": ""
+
+# Upload SSL keys (not always used but no harm in uploading them)
+pre_cluster_start:
+  - on_all_hosts:
+      exec: |
+        rm -rf mongosh-*
+  - on_all_hosts:
+      download_files:
+        - source: https://downloads.mongodb.com/compass/mongosh-2.2.2-linux-x64-openssl3.tgz
+          target: mongosh-dsimanagedversion.tgz
+  - on_all_hosts:
+      exec: |
+        tar xf mongosh-dsimanagedversion.tgz
+        mkdir -p bin
+        # Backward compatibility
+        ln -s $(pwd)/mongosh-*/bin/mongosh bin/mongo
+        bin/mongo --version
+
+
+  - on_all_hosts:
+      upload_repo_files:
+        - source: configurations/mongodb_setup/ssl/dsitest.dev.pem
+          target: ${mongodb_setup.mongo_dir}/member.pem
+        - source: configurations/mongodb_setup/ssl/dsitest.dev.ca-bundle
+          target: ${mongodb_setup.mongo_dir}/root.crt
+
+mongos_config_file:
+  net: ${mongodb_setup.mongod_config_file.net}
+  processManagement:
+    fork: true
+  setParameter:
+    enableTestCommands: 1
+  systemLog:
+    destination: file
+    path: data/logs/mongos.log
+
+rs_conf:
+  settings:
+    chainingAllowed: false
+
+configsvr_config_file:
+  net: ${mongodb_setup.mongod_config_file.net}
+  processManagement:
+    fork: true
+  setParameter:
+    enableTestCommands: 1
+  storage:
+    dbPath: data/dbs
+    engine: wiredTiger
+  systemLog:
+    destination: file
+    path: data/logs/mongod.log
+
+shutdown_options:
+  force: true
+  timeoutSecs: 30
+
+timeouts:
+  shutdown_ms: 540000
+  sigterm_ms: 60000
+
+topology:
+  - cluster_type: standalone
+    id: myid1
+    public_ip: ${infrastructure_provisioning.out.mongod.1.public_ip}
+    private_ip: ${infrastructure_provisioning.out.mongod.1.private_ip}

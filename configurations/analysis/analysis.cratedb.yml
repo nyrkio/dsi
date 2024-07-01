@@ -3,7 +3,7 @@ checks:
   - exit
   - core
 
-  - compare_reports
+  - json2csv
 
 results_json:
   path: report.json

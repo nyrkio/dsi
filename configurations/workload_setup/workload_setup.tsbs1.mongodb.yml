@@ -1,0 +1,82 @@
+tsbs_load_hack:
+  - on_localhost:
+      exec: echo goto regular tsbs
+
+tsbs_done:
+  - on_all_hosts:
+      exec: ${workload_setup.install_go}
+  - on_localhost:
+      checkout_repos:
+        - source: git@github.com:mongodb-forks/tsbs.git  # git@github.com:benchANT/tsbs.git
+          target: ${workload_setup.local_repos.tsbs}
+  - on_mongod:
+      upload_files:
+        - source: ${workload_setup.local_repos.tsbs}
+          target: ./tsbs
+  - on_mongod:
+      exec: |
+          cd tsbs
+          make
+  - on_mongod:
+      exec: |
+        me=$(hostname)
+        if [[ $me == "ip-10-2-0-200.us-west-2.compute.internal" ]]
+        then
+          if [ -e ./data/mongo-data.gz ]; then rm ./data/mongo-data.gz; fi
+
+          cd ./tsbs
+          echo Now generating devops data set. This will take a while...
+          ./bin/tsbs_generate_data --use-case="devops" --seed=12345 --scale=4000     --timestamp-start="2016-01-01T00:00:00Z"   --timestamp-end="2016-01-04T00:00:00Z"     --log-interval="10s" --format="mongo"   | gzip > ../data/mongo-data.gz
+
+          ./bin/tsbs_load config --target=mongo --data-source=FILE
+        fi
+
+  # - on_mongod:
+  #     exec: |
+  #         cat ./data/mongo-data.gz | gunzip | ./tsbs/bin/tsbs_load_mongo --batch-size=10000 --do-create-db --hosts=md --user=username --pass=password --seed=12345 --shards=30 --workers=30
+
+  - on_workload_client:
+      upload_files:
+        - source: ${workload_setup.local_repos.tsbs}
+          target: ./tsbs
+tsbs:
+  - on_workload_client:
+      exec: |
+          cd tsbs
+          make
+
+          echo single-groupby-1-1-1 > queries.txt
+          echo single-groupby-1-1-12 >> queries.txt
+          echo single-groupby-1-8-1 >> queries.txt
+          echo single-groupby-5-1-2 >> queries.txt
+          echo single-groupby-5-1-12 >> queries.txt
+          echo single-groupby-5-8-1 >> queries.txt
+          # echo cpu-max-all-1 >> queries.txt
+          # echo cpu-max-all-8 >> queries.txt
+          echo double-groupby-1 >> queries.txt
+          echo double-groupby-5 >> queries.txt
+          echo double-groupby-all >> queries.txt
+          # echo high-cpu-all >> queries.txt
+          # echo high-cpu-1 >> queries.txt
+          echo lastpoint >> queries.txt
+          echo groupby-orderby-limit >> queries.txt
+
+          FORMATS=mongo SCALE=4000 SEED=12345 TS_START="2016-01-01T00:00:00Z" TS_END="2016-01-01T13:00:01Z" QUERIES=1000 QUERY_TYPES=$(cat queries.txt) MONGO_USE_NAIVE=false BULK_DATA_DIR="./tsbs_queries_tscollection3" EXE_FILE_NAME=/home/${infrastructure_provisioning.tfvars.ssh_user}/tsbs/bin/tsbs_generate_queries ./scripts/generate_queries.sh
+
+
+
+
+install_java: |
+    sudo yum install java-21-amazon-corretto-devel -y --quiet > /dev/null
+    java -version
+
+install_go: |
+    curl -O --location https://go.dev/dl/go1.22.3.linux-amd64.tar.gz
+    sudo rm -rf .local/go
+    mkdir -p .local
+    tar -C .local/ -xzf go1.22.3.linux-amd64.tar.gz
+    sudo rm -rf go
+    mkdir go
+    echo export PATH=$PATH:$HOME/.local/go/bin >> $HOME/.bashrc
+    sudo yum groupinstall -y --quiet "Development tools"
+    mkdir -p ./tsbs
