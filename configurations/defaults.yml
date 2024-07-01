@@ -424,8 +424,8 @@ cluster_setup:
       directories:
         extract_dir: not used
         bin_dir: not used
-        log_dir: not used
-        data_dir: not used
+        log_dir: data/logs
+        data_dir: data
         config_dir: not used
         journal: not used
       node_config_file: ${mongodb_setup.mongod_config_file}
