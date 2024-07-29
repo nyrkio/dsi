@@ -11,19 +11,19 @@ run:
   #     ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_${cluster_setup.meta.product_name} --workers=30 --user=username --pass=password --hosts=${cluster_setup.meta.hostname}
 
 
-  # - id: tsbs_load_hack
-  #   type: tsbs_load_hack
-  #   cmd: echo "We're done. Loading was intentionally done in pre_test."
-  #   output_files:
-  #     - tsbs_load_hack_pretest.log
-  #   pre_test:
-  #     - on_mongod:
-  #         exec: |
-  #           me=$(hostname)
-  #           if [ $me == "ip-10-2-0-200.us-west-2.compute.internal" ]
-  #           then
-  #             cat ./data/${cluster_setup.meta.product_name}-data.gz | gunzip | ./tsbs/bin/tsbs_load_${cluster_setup.meta.product_name} --batch-size=10000 --do-create-db --hosts=${cluster_setup.meta.hostname} --user=username --pass=password --seed=12345 --shards=30 --workers=30 | tee tsbs_load_hack_pretest.log
-  #           fi
+  - id: tsbs_load_hack
+    type: tsbs_load_hack
+    cmd: echo "We're done. Loading was intentionally done in pre_test."
+    output_files:
+      - tsbs_load_hack_pretest.log
+    pre_test:
+      - on_mongod:
+          exec: |
+            me=$(hostname)
+            if [ $me == "ip-10-2-0-200.us-west-2.compute.internal" ]
+            then
+              cat ./data/${cluster_setup.meta.product_name}-data.gz | gunzip | ./tsbs/bin/tsbs_load_${cluster_setup.meta.product_name} --batch-size=10000 --do-create-db --hosts=${cluster_setup.meta.hostname} --user=username --pass=password --seed=12345 --shards=30 --workers=30 | tee tsbs_load_hack_pretest.log
+            fi
 
   - id: tsbs_single-groupby-1-1-1
     type: tsbs
