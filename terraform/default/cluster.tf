@@ -39,6 +39,7 @@ variable mongod_seeded_ebs_iops            { default = 240 }
 
 variable mongod_ebs_size            { default = 100 }
 variable mongod_ebs_iops            { default = 240 }
+variable mongod_ebs_type            { default = "io1" }
 
 variable runner_hostname            { default = "missing" }
 variable runner_instance_id         { default = "none" }
@@ -84,6 +85,7 @@ module "cluster" {
     mongod_ebs_instance_count   = var.mongod_ebs_instance_count
     mongod_ebs_iops             = var.mongod_ebs_iops
     mongod_ebs_size             = var.mongod_ebs_size
+    mongod_ebs_type             = var.mongod_ebs_type
 
     # Seeded EBS instance support
     mongod_seeded_ebs_instance_type    = var.mongod_seeded_ebs_instance_type

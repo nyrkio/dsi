@@ -43,6 +43,7 @@ variable expire_on                      { default = "2016-12-31" }
 # variables EBS support
 variable mongod_ebs_size                       { default = 100 }
 variable mongod_ebs_iops                       { default = 1500 }
+variable mongod_ebs_type                       { default = "io1" }
 
 # variable for seeded_ebs
 variable mongod_seeded_ebs_snapshot_id         { default = "" }
@@ -120,6 +121,7 @@ module "mongod_ebs_instance" {
     task_id             = var.task_id
     ebs_size            = var.mongod_ebs_size
     ebs_iops            = var.mongod_ebs_iops
+    ebs_type            = var.mongod_ebs_type
 }
 
 # AWS instance with placement group, and seeded EBS volume for mongod
