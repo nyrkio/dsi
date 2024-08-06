@@ -1,0 +1,21 @@
+# Meta data about this cluster setup
+meta:
+  product_name: influxdb
+
+  hosts: ${infrastructure_provisioning.out.mongod.1.private_ip}:${cluster_setup.meta.port}
+  host: ${cluster_setup.meta.hostname}:${cluster_setup.meta.port}
+  hostname: ${infrastructure_provisioning.out.mongod.1.private_ip}
+  connection_string: ${infrastructure_provisioning.out.mongod.1.private_ip}:${cluster_setup.meta.port}
+  port: 8086
+
+
+#tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
+
+
+topology:
+  - cluster_type: standalone
+    id: mynode0
+    node:
+      # Note: md0 will be used for the tsbs data files and isn't itself part of a topology
+      - public_ip: ${infrastructure_provisioning.out.mongod.1.public_ip}
+        private_ip: ${infrastructure_provisioning.out.mongod.1.private_ip}

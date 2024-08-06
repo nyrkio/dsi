@@ -330,6 +330,7 @@ cluster_setup:
   # Wheter to use numactl_prefix or not
   numactl: ${cluster_setup.product.${cluster_setup.meta.product_name}.numactl}
 
+  version_check: ${cluster_setup.product.${cluster_setup.meta.product_name}.version_check}
   # One or more program names started by cluster_setup.py
   # This list is mostly used for pgrep and pkill. The actual start command is in the next row
   launch_program: ${cluster_setup.product.${cluster_setup.meta.product_name}.launch_program}
@@ -357,6 +358,12 @@ cluster_setup:
     url:
       "True": "${cluster_setup.authentication.username}:${cluster_setup.authentication.password}@"
       "False": ""
+    influxdb:
+      token:
+        wc: "ignore"
+        md:
+          - "Replace me with the token from http://${infrastructure_provisioning.out.mongod.0.public_ip}:8086"
+          - "Replace me with the token from http://${infrastructure_provisioning.out.mongod.1.public_ip}:8086"
 
 
   topology:
@@ -618,6 +625,111 @@ cluster_setup:
             retrieve_files:
               - source: ./sys.jobs_metrics.out
                 target: ./sys.jobs_metrics.out
+
+
+    influxdb:
+      branch: 2
+      minversion: 7.8
+      # https://download.influxdata.com/influxdb/releases/influxdb2-2.7.8_linux_amd64.tar.gz
+      # https://dl.influxdata.com/influxdb/releases/
+      tar_file_url: https://dl.influxdata.com/influxdb/releases/influxdb2-${cluster_setup.product.${cluster_setup.meta.product_name}.branch}.${cluster_setup.product.${cluster_setup.meta.product_name}.minversion}_linux_amd64.tar.gz
+      clean_logs: false
+      clean_db_dir: false
+
+      numactl: false
+
+      launch_program:
+        - influxd
+
+
+      version_check: version
+      launch_command: /home/ec2-user/influxdb/usr/bin/influxd >> /home/ec2-user/logs/influxd.log &
+
+      shutdown_command: sudo systemctl stop crate.service
+
+      create_user_shell_cmd: SELECT "User creation manual and based on tokens..."
+      client_command: ./influx
+      client_command_file: echo {connection_string}  {command_file}
+      client_command_local: echo "{}"
+      client_command_local_file:  echo SKIP
+      check_node_up: SELECT VERSION();
+      files:
+        lock: data/influxdb/influxdb.pid
+      directories:
+        extract_dir: influxdb
+        bin_dir: /home/ec2-user/influxdb/usr/bin
+        log_dir: /home/ec2-user/logs
+        data_dir: /home/ec2-user/data/influxdb
+        config_dir: config/
+        journal: null
+
+      node_config_file:
+        remote_path: config/todo
+        content: |
+          TODO
+
+      meta:
+        hosts: md0:8086
+        host: md0:8086
+        hostname: md0
+        connection_string: TODO
+        port: 8086
+        is_sharded: false
+        is_replset: false
+        cluster_setup: standalone
+        jdbc:
+          connection_string: TODO
+
+      pre_cluster_start:
+        - on_all_hosts:
+            exec: |
+              mkdir -p config
+              mkdir -p logs
+              mkdir -p data/influx
+
+
+        - on_all_hosts:
+            exec: |
+              sudo cp influxdb.service /usr/lib/systemd/system/influxdb.service
+
+
+
+      post_cluster_start:
+        - on_all_hosts:
+            download_files:
+              # https://download.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz
+              # https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz
+              - source: https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz
+                target: influxdb2-client.tar.gz
+        - on_all_hosts:
+            exec: |
+                tar xzf influxdb2-client.tar.gz
+                chmod a+x influx
+                ./influx version
+
+        - on_localhost:
+            exec: |
+                for pubip in $(cat infrastructure_provisioning.out.yml | grep public_ip|cut -d: -f2);
+                do
+                    echo "http://$pubip:8086/"
+                done
+
+
+        - on_workload_client:
+            exec: |
+                echo
+                echo "InfluxDB is now installed. At this point a manual bootstrapping step is necessary."
+                echo "You need to go to the above URLs, copy paste the token shown, and store it as"
+                echo "cluster_setup.authentication.influxdb.token.md.0"
+                echo
+                echo "Finally, you can:"
+                echo "for node in wc md.0 md.1;"
+                echo "do"
+                echo "    ip=$(.bin/alias.py $node)"
+                echo "    .bin/conn.py $node --command './influx config create --host-url http://localhost:8086/ --active --org dsiorg --config-name dsi-config --token ${cluster_setup.authentication.influxdb.token.md.0}'"
+                echo "done"
+
+
 
   post_task:
     - on_all_servers:
