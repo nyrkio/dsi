@@ -68,10 +68,9 @@ def parse_command_line(config, args=None):
         config['bootstrap_file'] = args.bootstrap_file
     if args.directory:
         config['directory'] = args.directory
-    if args.copy:
-        config['copy'] = args.copy
     if args.list:
         config['list'] = args.list
+    config['copy'] = args.copy
     return config
 
 
@@ -283,7 +282,7 @@ def load_bootstrap(config, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    if 'copy' in config:
+    if 'copy' in config and config['copy']:
         LOGGER.info("--copy will use ./bootstrap.yml and copy into current work directory.")
 
     elif 'bootstrap_file' in config:
