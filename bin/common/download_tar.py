@@ -66,6 +66,9 @@ class DownloadTar(object):
         extract_dir = self.config['cluster_setup']['directories']['extract_dir']
         bin_dir = self.config["cluster_setup"]["directories"]["bin_dir"]
         cluster_executable = self.config["cluster_setup"]["launch_program"]
+        version_check = self.config["cluster_setup"].get("version_check", ['-v', '--version'])
+        if not isinstance(version_check, list):
+            version_check = [version_check]
         if isinstance(cluster_executable, list):
             cluster_executable = cluster_executable[0]
         tmp_file = temp_file(self.cluster_binary_archive)
@@ -82,8 +85,4 @@ class DownloadTar(object):
                 ['mv', extract_dir+'/*/*', extract_dir],
                 ['pwd'],
                 ['mkdir', '-p', 'bin'],
-                ['ln', '-s', '${PWD}/' + extract_dir + '/bin/*', 'bin/'],
-                # It turns out binaries tend to ignore all other options if -v or --version is given
-                # This is convenient as it means we can satisfy both with the same hard coded
-                # invocation. We'll see how long this works. May have to parameterize to ConfigDict.
-                [bin_dir + '/' + cluster_executable, '-v', '--version']] # yapf: disable
+                ['ln', '-s', '${PWD}/' + extract_dir + '/bin/*', 'bin/']]
