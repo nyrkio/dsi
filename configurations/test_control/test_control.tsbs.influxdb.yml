@@ -1,0 +1,109 @@
+task_name: tsbs.influxdb
+
+timeouts:
+  no_output_ms: 15000000
+
+run:
+  # - id: tsbs_load_1
+  #   type: tsbs
+  #   cmd: |
+  #     ./tsbs/bin/tsbs_generate_data --use-case="devops" --seed=12345 --scale=4000     --timestamp-start="2016-01-01T00:00:00Z"   --timestamp-end="2016-01-04T00:00:00Z"     --log-interval="10s" --format="influx"   | \
+  #     ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --workers=30
+
+
+  - id: tsbs_load_hack
+    type: tsbs_load_hack
+    cmd: echo "We're done. Loading was intentionally done in pre_test."
+    output_files:
+      - ./mongod.0/tsbs_load_hack_pretest.log
+    pre_test:
+      - on_all_servers:
+          exec: |
+            me=$(hostname)
+            echo $me
+            if [ $me == "ip-10-2-0-200.us-west-2.compute.internal" ]
+            then
+              echo Lets load some data...
+              cat ./data/influx-data.gz | gunzip | ./tsbs/bin/tsbs_load_influx --batch-size=10000 --do-create-db=false --gzip=true --urls='http://md1:8086/'  --seed=12345 --workers=30 --organization=dsiorg --auth-token=${cluster_setup.authentication.influxdb.token.md.1} --gzip=false
+            fi
+    post_test:
+      - on_all_servers:
+          retrieve_files:
+            - source: ./tsbs_load_hack_pretest.log
+              target: ./tsbs_load_hack_pretest.log
+            - source: ./tsbs_load_official_results.json
+              target: ./tsbs_load_official_results.json
+
+  - id: tsbs_single-groupby-1-1-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-single-groupby-1-1-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+  - id: tsbs_single-groupby-1-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-single-groupby-1-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086' --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+  - id: tsbs_single-groupby-1-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs_queries/influx-single-groupby-1-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+  - id: tsbs_single-groupby-5-1-12
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-single-groupby-5-1-12-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+  - id: tsbs_single-groupby-5-1-2
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-single-groupby-5-1-2-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+  - id: tsbs_single-groupby-5-8-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-single-groupby-5-8-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+
+  - id: tsbs_double-groupby-1
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-double-groupby-1-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+  - id: tsbs_double-groupby-5
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-double-groupby-5-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+  - id: tsbs_double-groupby-all
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+  - id: tsbs_groupby-orderby-limit
+    type: tsbs
+    cmd: |
+        ${infrastructure_provisioning.numactl_prefix} cat ./tsbs/tsbs_queries/influx-double-groupby-all-queries.gz | \
+        ${infrastructure_provisioning.numactl_prefix} gunzip | \
+        ${infrastructure_provisioning.numactl_prefix} ./tsbs/bin/tsbs_run_queries_influx --urls='http://md1:8086'  --auth-token=${cluster_setup.authentication.influxdb.token.md.1}  --workers=30
+
+
+between_tests:
+      - on_all_servers:
+          exec: echo Skip restarts
+

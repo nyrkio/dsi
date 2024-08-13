@@ -688,11 +688,6 @@ cluster_setup:
               mkdir -p data/influx
 
 
-        - on_all_hosts:
-            exec: |
-              sudo cp influxdb.service /usr/lib/systemd/system/influxdb.service
-
-
 
       post_cluster_start:
         - on_all_hosts:
@@ -720,15 +715,43 @@ cluster_setup:
                 echo
                 echo "InfluxDB is now installed. At this point a manual bootstrapping step is necessary."
                 echo "You need to go to the above URLs, copy paste the token shown, and store it as"
-                echo "cluster_setup.authentication.influxdb.token.md.0"
+                echo "cluster_setup:"
+                echo "  authentication:"
+                echo "    influxdb:"
+                echo "      token:"
+                echo "        md:"
+                echo "          - <paste token here>"
+                echo "          - <paste token here>"
                 echo
                 echo "Finally, you can:"
                 echo "for node in wc md.0 md.1;"
                 echo "do"
-                echo "    ip=$(.bin/alias.py $node)"
-                echo "    .bin/conn.py $node --command './influx config create --host-url http://localhost:8086/ --active --org dsiorg --config-name dsi-config --token ${cluster_setup.authentication.influxdb.token.md.0}'"
+                echo "    ip=\$(.bin/alias.py \$node)"
+                echo "    .bin/conn.py \$node --command './influx config create --host-url http://localhost:8086/ --active --org dsiorg --config-name dsi-config --token ${cluster_setup.authentication.influxdb.token.md.0}'"
                 echo "done"
 
+      post_test:
+        - on_all_servers:
+            exec: |
+              # sadf also comes with sysstat. And here it's guaranteed to be a compatible version with sar.
+              # Easiest to just generate graphs immediately after each test.
+              cd ${cluster_setup.directories.log_dir}
+              sadf -g sar_datafile.bin.log -- -B > sar_paging-B.svg
+              sadf -g sar_datafile.bin.log -- -b > sar_blocks-b.svg
+              sadf -g sar_datafile.bin.log -- -d > sar_iostat-d.svg
+              sadf -g sar_datafile.bin.log -- -F > sar_mounts-F.svg
+              sadf -g sar_datafile.bin.log -- -H > sar_hugepage-H.svg
+              sadf -g sar_datafile.bin.log -- -q > sar_load-q.svg
+              sadf -g sar_datafile.bin.log -- -r > sar_memory-r.svg
+              sadf -g sar_datafile.bin.log -- -S > sar_swap-S.svg
+              sadf -g sar_datafile.bin.log -- -u > sar_cpu_util-u.svg
+              sadf -g sar_datafile.bin.log -- -v > sar_inode-v.svg
+              sadf -g sar_datafile.bin.log -- -W > sar_swap-W.svg
+
+        - on_all_servers:
+            retrieve_files:
+              - source: ${cluster_setup.directories.log_dir}
+                target: ./
 
 
   post_task:
