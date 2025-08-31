@@ -246,10 +246,8 @@ class Host(object):
 
         self.create_file(remote_file_name, script)
 
-        exec_base = config["cluster_setup"]["client_command_file"]
-        full_exec_str = exec_base.format(connection_string=connection_string,
-                                         command_file=remote_file_name)
-
+        exec_base = config["cluster_setup"]["client_command_local_file"]
+        full_exec_str = exec_base.format(remote_file_name)
         return self.exec_command(full_exec_str,
                                  max_time_ms=max_time_ms,
                                  quiet=quiet,

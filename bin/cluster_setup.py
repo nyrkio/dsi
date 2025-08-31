@@ -42,6 +42,7 @@ class ClusterSetup(object):
         timeouts = self.config['cluster_setup'].get('timeouts', {})
         self.shutdown_ms = timeouts.get('shutdown_ms', 9 * common.host_utils.ONE_MINUTE_MILLIS)
         self.sigterm_ms = timeouts.get('sigterm_ms', common.host_utils.ONE_MINUTE_MILLIS)
+        self.auth_enabled = config['cluster_setup']['authentication']['enabled']
 
         self.parse_topologies()
 
@@ -117,8 +118,23 @@ class ClusterSetup(object):
                restart_clean_logs=None,
                nodes=None):
 
-        # LOG.info("Adding default users for all clusters")
-        # self.add_default_users()
+        # For a start or restart with restart_clean_db_dir True, and if Auth is configured, we need
+        # to bring the cluster up twice. First without auth, then add user, then with auth
+        if self.auth_enabled and (not is_restart or restart_clean_db_dir):
+            LOG.info("Auth configured. Starting Cluster without Auth first")
+            self._start_auth_explicit(is_restart,
+                                      restart_clean_db_dir,
+                                      restart_clean_logs,
+                                      enable_auth=False)
+            LOG.info("Adding default users for all clusters")
+            self.add_default_users()
+            self.shutdown(self.shutdown_ms)
+            LOG.info("Restarting Clusters with authentication enabled")
+
+            # After here we are doing a restart without cleaning the db_dir.
+            is_restart = True
+            restart_clean_db_dir = False
+            restart_clean_logs = False
 
         return self._start_auth_explicit(is_restart=is_restart,
                                          restart_clean_db_dir=restart_clean_db_dir,

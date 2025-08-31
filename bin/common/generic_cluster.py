@@ -123,6 +123,7 @@ class ClusterNode(GenericCluster):
             self.launch_program = list(self.launch_program)
 
         self.launch_command = self.cluster_setup['launch_command']
+        self.user_shell_cmd = self.cluster_setup['create_user_shell_cmd']
 
         self.public_ip = topology['node'][0]['public_ip']
         self.private_ip = topology['node'][0].get('private_ip', self.public_ip)
@@ -425,7 +426,9 @@ class ClusterNode(GenericCluster):
         return return_value
 
     def add_default_users(self):
-        raise NotImplementedError()
+        LOG.info("Adding remote users to mysql.user")
+        LOG.info(self.user_shell_cmd)
+        self.exec_client_shell(self.user_shell_cmd)
 
     def close(self):
         """Closes SSH connections to remote hosts."""

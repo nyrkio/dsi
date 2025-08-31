@@ -330,10 +330,12 @@ cluster_setup:
   # Wheter to use numactl_prefix or not
   numactl: ${cluster_setup.product.${cluster_setup.meta.product_name}.numactl}
 
+  version_check: ${cluster_setup.product.${cluster_setup.meta.product_name}.version_check}
   # One or more program names started by cluster_setup.py
   # This list is mostly used for pgrep and pkill. The actual start command is in the next row
   launch_program: ${cluster_setup.product.${cluster_setup.meta.product_name}.launch_program}
   launch_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.launch_command}
+  create_user_shell_cmd: ${cluster_setup.product.${cluster_setup.meta.product_name}.create_user_shell_cmd}
   shutdown_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.shutdown_command}
   client_command: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command}
   client_command_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.client_command_file}
@@ -345,8 +347,8 @@ cluster_setup:
     lock: ${cluster_setup.directories.data_dir}/${cluster_setup.launch_program.0}.lock
   directories: ${cluster_setup.product.${cluster_setup.meta.product_name}.directories}
 
-  clean_db_dir: true
-  clean_logs: true
+  clean_db_dir: ${cluster_setup.product.${cluster_setup.meta.product_name}.clean_db_dir}
+  clean_logs: ${cluster_setup.product.${cluster_setup.meta.product_name}.clean_logs}
 
   node_config_file: ${cluster_setup.product.${cluster_setup.meta.product_name}.node_config_file}
 
@@ -408,6 +410,9 @@ cluster_setup:
   # Note these defaults can be overridden by user, but not unset.
   product:
     mongodb:
+      clean_db_dir: true
+      clean_logs: true
+
       meta: ${mongodb_setup.meta}
       numactl: false
       tar_file_url: not used
@@ -442,6 +447,8 @@ cluster_setup:
                 target: ./
 
     cratedb:
+      clean_db_dir: true
+      clean_logs: true
       tar_file_url: https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.6.2.tar.gz
 
       # https://cdn.crate.io/downloads/releases/cratedb/x64_linux/crate-5.7.1.tar.gz
@@ -581,14 +588,137 @@ cluster_setup:
                   GRANT ALL PRIVILEGES to username;
 
 
-      post_test:
-        - on_workload_client:
-            exec: |
-              ./crash --format dynamic --hosts ${cluster_setup.meta.hostname}:4200 --command "SELECT * FROM sys.jobs_metrics LIMIT 100;"> ./sys.jobs_metrics.out
-              ./crash --format dynamic --hosts ${cluster_setup.meta.hostname} --command "SELECT stmt, SUM(ended-started) as sum_t, COUNT(stmt) as num_t, MAX(ended-started) as max_t, AVG(ended-started) as avg_t, MIN(ended-started) as min_t FROM sys.jobs_log GROUP BY stmt ORDER BY sum_t DESC LIMIT 100;" > ./sys.jobs_log.aggregated.out
-              # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.jobs_log;" |gzip> ./sys.jobs_log.out.gz
-              # ./crash --format dynamic --hosts ${cluster_setup.meta.connection_string} --command "SELECT * FROM sys.operations_log;" |gzip> ./sys.operations_log.out.gz
+    mariadb:
+      branch: 11.4
+      minversion: 2
+      tar_file_url: https://archive.mariadb.org/mariadb-${cluster_setup.product.${cluster_setup.meta.product_name}.branch}.${cluster_setup.product.${cluster_setup.meta.product_name}.minversion}/bintar-linux-systemd-x86_64/mariadb-11.4.2-linux-systemd-x86_64.tar.gz
+      clean_logs: false
+      clean_db_dir: false
 
+      numactl: false
+
+      launch_program:
+        - mysqld
+        - mysqld_safe
+        - mariadbd
+        - mariadbd-safe
+
+      version_check: --version
+      launch_command: ./bin/mariadbd-safe --defaults-file=/home/ec2-user/my.cnf &
+
+      create_user_shell_cmd: |
+        CREATE USER IF NOT EXISTS 'username'@'%' IDENTIFIED BY 'password';
+        GRANT ALL PRIVILEGES ON *.* TO 'username'@'%' WITH GRANT OPTION;
+        CREATE USER IF NOT EXISTS 'username'@'wc' IDENTIFIED BY 'password';
+        GRANT ALL PRIVILEGES ON *.* TO 'username'@'wc' WITH GRANT OPTION;
+      shutdown_command: echo I forgot how to shut down mysql?
+      client_command: bin/mariadb --user=username --password=password
+      client_command_file: bin/mariadb --user=username --password=password {connection_string} < {command_file}
+      client_command_local: echo "{}" | sudo bin/mariadb --user=root
+      client_command_local_file:  sudo bin/mariadb --user=root  < {}
+      check_node_up: SELECT VERSION();
+      files:
+        lock: data/mysql/mysqld.lock
+      directories:
+        extract_dir: mariadb
+        bin_dir: mariadb/bin
+        log_dir: logs
+        data_dir: data/mysql
+        config_dir: config/
+        journal: null
+
+      node_config_file:
+        remote_path: config/my.cnf.2.dummy
+        content: |
+          [client-server]
+
+      meta:
+        hosts: md0:3306
+        host: md0:3306
+        hostname: md0
+        connection_string: mysql://md0:3306
+        port: 3306
+        is_sharded: false
+        is_replset: false
+        cluster_setup: standalone
+        jdbc:
+          connection_string: mysql://md0:3306
+
+      pre_cluster_start:
+        - on_all_hosts:
+            exec: |
+              mkdir -p config
+              mkdir -p logs
+              mkdir -p data/mysql
+        - on_all_hosts:
+            upload_files:
+              - target: /home/ec2-user/my.cnf
+                content: |
+                  [client-server]
+                  # Uncomment these if you want to use a nonstandard connection to MariaDB
+                  socket=/tmp/mysql.sock
+                  port=3306
+
+                  # This will be passed to all MariaDB clients
+                  [client]
+                  password=password
+
+                  # The MariaDB server
+                  [mysqld]
+                  # Directory where you want to put your data
+                  datadir=/home/ec2-user/data/mysql
+                  # This is the prefix name to be used for all log, error and replication files
+                  log-basename=mysqld
+                  # Enable logging by default to help find problems
+                  general_log_file        = /home/ec2-user/logs/mysql.log
+                  general_log             = 1
+                  log_error=/home/ec2-user/logs/mysqld.err
+                  slow_query_log       = 0
+                  slow_query_log_file	= /home/ec2-user/logs/mysql/mysql-slow.log
+                  long_query_time      = 1
+
+                  max_connections        = 300
+                  table_open_cache       = 64
+                  thread_concurrency     = 10
+                  table_open_cache       = 32
+
+                  query_cache_type   = 1
+                  query_cache_limit	= 1M
+                  query_cache_size   = 8M
+
+                  server-id		= 1
+                  log_bin			= /home/ec2-user/data/mysql/mysql-bin.log
+                  expire_logs_days	= 14
+                  max_binlog_size         = 1G
+                  #binlog_do_db		= include_database_name
+                  #binlog_ignore_db	= include_database_name
+                  #
+                  # * InnoDB
+                  #
+                  # InnoDB is enabled by default with a 10MB datafile in /var/lib/mysql/.
+                  # Read the manual for more InnoDB related options. There are many!
+                  innodb_data_file_path = ibdata1:128M:autoextend
+                  innodb_file_per_table = 1
+                  innodb_buffer_pool_size         = 4096M
+                  innodb_log_buffer_size          = 1024M
+                  innodb_log_file_size            = 1024M
+                  innodb_flush_log_at_trx_commit  = 1
+                  innodb_flush_method             = O_DIRECT
+
+        - on_all_hosts:
+            exec: |
+              cd $HOME
+              sudo dnf  install libxcrypt-compat -y --quiet
+              sudo yum update  -y --quiet && sudo yum install ncurses-compat-libs -y --quiet
+
+              rm -f mysql
+              ln -s mariadb mysql
+              cd mysql
+              ./scripts/mariadb-install-db --defaults-file=/home/ec2-user/my.cnf
+
+
+
+      post_test:
         - on_all_servers:
             exec: |
               # sadf also comes with sysstat. And here it's guaranteed to be a compatible version with sar.
@@ -610,14 +740,11 @@ cluster_setup:
             retrieve_files:
               - source: ${cluster_setup.directories.log_dir}
                 target: ./
+      post_cluster_start:
         - on_workload_client:
-            retrieve_files:
-              - source: ./sys.jobs_log.aggregated.out
-                target: ./sys.jobs_log.aggregated.out
-        - on_workload_client:
-            retrieve_files:
-              - source: ./sys.jobs_metrics.out
-                target: ./sys.jobs_metrics.out
+            exec: echo "We're done I think"
+
+
 
   post_task:
     - on_all_servers:
@@ -719,6 +846,31 @@ test_control:
               db.url=jdbc:postgresql://${cluster_setup.meta.hostname}:${cluster_setup.meta.pgsql.port}/ycsb
               db.user=username
               db.passwd=password
+    mariadb:
+      ycsb:
+        binding_name: jdbc
+        create_table_script: |
+            use test;
+            DROP TABLE IF EXISTS usertable;
+            CREATE TABLE usertable (
+                  YCSB_KEY VARCHAR(100) PRIMARY KEY,
+                  FIELD0 TEXT, FIELD1 TEXT,
+                  FIELD2 TEXT, FIELD3 TEXT,
+                  FIELD4 TEXT, FIELD5 TEXT,
+                  FIELD6 TEXT, FIELD7 TEXT,
+                  FIELD8 TEXT, FIELD9 TEXT
+              )
+              ;
+        dbproperties: |
+              db.driver=com.mysql.jdbc.Driver
+              db.url=jdbc:mysql://md:3306/test
+              db.user=username
+              db.passwd=password
+              db.batchsize=1000
+              jdbc.fetchsize=1
+              jdbc.autocommit=true
+              jdbc.batchupdateapi=false
+              db.batchsize=1000
 
   common_fio_config: |
     [global]
